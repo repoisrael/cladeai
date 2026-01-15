@@ -16,7 +16,16 @@ import {
   ChevronRight,
   Zap,
   Crown,
+  Calendar,
+  Filter,
+  Check,
+  Clock,
 } from 'lucide-react';
+import { usePlayHistory, usePlayStats } from '@/hooks/api/usePlayEvents';
+import { useProfile, useUserProviders, useSetPreferredProvider } from '@/hooks/api/useProfile';
+import { PROVIDER_INFO } from '@/lib/providers';
+import { MusicProvider } from '@/types';
+import { formatDistanceToNow } from 'date-fns';
 
 // Mock taste DNA data
 const tasteDNA = {
@@ -36,10 +45,31 @@ const tasteDNA = {
 export default function ProfilePage() {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const [providerFilter, setProviderFilter] = useState<MusicProvider | 'all'>('all');
+  const [showProviderSelector, setShowProviderSelector] = useState(false);
+  
+  // Fetch data
+  const { data: profile } = useProfile();
+  const { data: userProviders = [] } = useUserProviders();
+  const { data: playStats } = usePlayStats();
+  const { data: playHistory = [] } = usePlayHistory({
+    limit: 20,
+    provider: providerFilter === 'all' ? undefined : providerFilter,
+  });
+  const setPreferredProvider = useSetPreferredProvider();
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const handleSetPreferredProvider = async (provider: MusicProvider | 'none') => {
+    try {
+      await setPreferredProvider.mutateAsync(provider);
+      setShowProviderSelector(false);
+    } catch (error) {
+      console.error('Failed to set preferred provider:', error);
+    }
   };
 
   if (loading) {
@@ -224,38 +254,246 @@ export default function ProfilePage() {
             Connected Services
           </h3>
 
-          <button className="w-full p-4 glass rounded-2xl flex items-center justify-between hover:bg-muted/30 transition-colors">
+          {/* Spotify */}
+          <button 
+            className="w-full p-4 glass rounded-2xl flex items-center justify-between hover:bg-muted/30 transition-colors"
+            onClick={() => {/* TODO: Connect Spotify */}}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#1DB954]/20 flex items-center justify-center">
                 <Music className="w-5 h-5 text-[#1DB954]" />
               </div>
               <div className="text-left">
                 <span className="font-medium">Spotify</span>
-                <p className="text-xs text-muted-foreground">Not connected</p>
+                <p className="text-xs text-muted-foreground">
+                  {userProviders.find(p => p.provider === 'spotify') 
+                    ? `Connected ${formatDistanceToNow(new Date(userProviders.find(p => p.provider === 'spotify')!.connected_at))} ago`
+                    : 'Not connected'}
+                </p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              {userProviders.find(p => p.provider === 'spotify') && (
+                <Check className="w-4 h-4 text-[#1DB954]" />
+              )}
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
           </button>
 
-          <button className="w-full p-4 glass rounded-2xl flex items-center justify-between hover:bg-muted/30 transition-colors">
+          {/* YouTube Music */}
+          <button 
+            className="w-full p-4 glass rounded-2xl flex items-center justify-between hover:bg-muted/30 transition-colors"
+            onClick={() => {/* TODO: Connect YouTube */}}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#FF0000]/20 flex items-center justify-center">
                 <Music className="w-5 h-5 text-[#FF0000]" />
               </div>
               <div className="text-left">
                 <span className="font-medium">YouTube Music</span>
-                <p className="text-xs text-muted-foreground">Not connected</p>
+                <p className="text-xs text-muted-foreground">
+                  {userProviders.find(p => p.provider === 'youtube') 
+                    ? `Connected ${formatDistanceToNow(new Date(userProviders.find(p => p.provider === 'youtube')!.connected_at))} ago`
+                    : 'Not connected'}
+                </p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              {userProviders.find(p => p.provider === 'youtube') && (
+                <Check className="w-4 h-4 text-[#FF0000]" />
+              )}
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
           </button>
+
+          {/* Preferred Provider Selector */}
+          {userProviders.length > 0 && (
+            <div className="p-4 glass rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Preferred Provider
+                </h4>
+                <button
+                  onClick={() => setShowProviderSelector(!showProviderSelector)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Change
+                </button>
+              </div>
+              
+              {!showProviderSelector ? (
+                <div className="flex items-center gap-2">
+                  {profile?.preferred_provider && profile.preferred_provider !== 'none' ? (
+                    <>
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: `${PROVIDER_INFO[profile.preferred_provider].color}20` }}
+                      >
+                        <span>{PROVIDER_INFO[profile.preferred_provider].icon}</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {PROVIDER_INFO[profile.preferred_provider].name}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No preference set</span>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleSetPreferredProvider('none')}
+                    className={`w-full p-2 rounded-lg text-left text-sm transition-colors ${
+                      !profile?.preferred_provider || profile.preferred_provider === 'none'
+                        ? 'bg-primary/20 text-primary'
+                        : 'hover:bg-muted/30'
+                    }`}
+                  >
+                    No preference
+                  </button>
+                  {userProviders.map((up) => (
+                    <button
+                      key={up.id}
+                      onClick={() => handleSetPreferredProvider(up.provider)}
+                      className={`w-full p-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${
+                        profile?.preferred_provider === up.provider
+                          ? 'bg-primary/20 text-primary'
+                          : 'hover:bg-muted/30'
+                      }`}
+                    >
+                      <div 
+                        className="w-6 h-6 rounded flex items-center justify-center text-xs"
+                        style={{ backgroundColor: `${PROVIDER_INFO[up.provider].color}20` }}
+                      >
+                        <span>{PROVIDER_INFO[up.provider].icon}</span>
+                      </div>
+                      {PROVIDER_INFO[up.provider].name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </motion.div>
+
+        {/* Play History Section */}
+        {playHistory.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Play History
+              </h3>
+              {playStats && (
+                <span className="text-xs text-muted-foreground">
+                  {playStats.totalPlays} total plays
+                </span>
+              )}
+            </div>
+
+            {/* Provider Filter */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <button
+                onClick={() => setProviderFilter('all')}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  providerFilter === 'all'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                All
+              </button>
+              {Object.entries(PROVIDER_INFO).map(([key, info]) => {
+                const hasProvider = userProviders.some(p => p.provider === key);
+                if (!hasProvider) return null;
+                
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setProviderFilter(key as MusicProvider)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1 transition-colors ${
+                      providerFilter === key
+                        ? 'text-white'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                    }`}
+                    style={providerFilter === key ? { backgroundColor: info.color } : {}}
+                  >
+                    <span>{info.icon}</span>
+                    {info.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Play History List */}
+            <div className="space-y-2">
+              {playHistory.map((event) => {
+                const track = event.tracks;
+                if (!track) return null;
+
+                return (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="p-3 glass rounded-xl flex gap-3 hover:bg-muted/30 transition-colors"
+                  >
+                    {/* Artwork */}
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted/50 flex-shrink-0">
+                      {track.artwork_url ? (
+                        <img
+                          src={track.artwork_url}
+                          alt={track.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Music className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Track Info */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm truncate">{track.title}</h4>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {Array.isArray(track.artists) ? track.artists.join(', ') : track.artist}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {/* Provider Badge */}
+                        <span
+                          className="px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1"
+                          style={{ 
+                            backgroundColor: `${PROVIDER_INFO[event.provider].color}20`,
+                            color: PROVIDER_INFO[event.provider].color 
+                          }}
+                        >
+                          <span className="text-[10px]">{PROVIDER_INFO[event.provider].icon}</span>
+                          {PROVIDER_INFO[event.provider].name}
+                        </span>
+                        {/* Timestamp */}
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(event.played_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Quick links */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
           className="grid grid-cols-2 gap-3"
         >
           <button className="p-4 glass rounded-2xl flex flex-col items-center gap-2 hover:bg-muted/30 transition-colors">
