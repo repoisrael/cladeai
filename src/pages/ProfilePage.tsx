@@ -259,25 +259,32 @@ export default function ProfilePage() {
             className="w-full p-4 glass rounded-2xl flex items-center justify-between hover:bg-muted/30 transition-colors"
             onClick={() => {/* TODO: Connect Spotify */}}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#1DB954]/20 flex items-center justify-center">
-                <Music className="w-5 h-5 text-[#1DB954]" />
-              </div>
-              <div className="text-left">
-                <span className="font-medium">Spotify</span>
-                <p className="text-xs text-muted-foreground">
-                  {userProviders.find(p => p.provider === 'spotify') 
-                    ? `Connected ${formatDistanceToNow(new Date(userProviders.find(p => p.provider === 'spotify')!.connected_at))} ago`
-                    : 'Not connected'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {userProviders.find(p => p.provider === 'spotify') && (
-                <Check className="w-4 h-4 text-[#1DB954]" />
-              )}
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </div>
+            {(() => {
+              const spotifyProvider = userProviders.find(p => p.provider === 'spotify');
+              return (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#1DB954]/20 flex items-center justify-center">
+                      <Music className="w-5 h-5 text-[#1DB954]" />
+                    </div>
+                    <div className="text-left">
+                      <span className="font-medium">Spotify</span>
+                      <p className="text-xs text-muted-foreground">
+                        {spotifyProvider 
+                          ? `Connected ${formatDistanceToNow(new Date(spotifyProvider.connected_at))} ago`
+                          : 'Not connected'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {spotifyProvider && (
+                      <Check className="w-4 h-4 text-[#1DB954]" />
+                    )}
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </>
+              );
+            })()}
           </button>
 
           {/* YouTube Music */}
@@ -285,25 +292,32 @@ export default function ProfilePage() {
             className="w-full p-4 glass rounded-2xl flex items-center justify-between hover:bg-muted/30 transition-colors"
             onClick={() => {/* TODO: Connect YouTube */}}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FF0000]/20 flex items-center justify-center">
-                <Music className="w-5 h-5 text-[#FF0000]" />
-              </div>
-              <div className="text-left">
-                <span className="font-medium">YouTube Music</span>
-                <p className="text-xs text-muted-foreground">
-                  {userProviders.find(p => p.provider === 'youtube') 
-                    ? `Connected ${formatDistanceToNow(new Date(userProviders.find(p => p.provider === 'youtube')!.connected_at))} ago`
-                    : 'Not connected'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {userProviders.find(p => p.provider === 'youtube') && (
-                <Check className="w-4 h-4 text-[#FF0000]" />
-              )}
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </div>
+            {(() => {
+              const youtubeProvider = userProviders.find(p => p.provider === 'youtube');
+              return (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#FF0000]/20 flex items-center justify-center">
+                      <Music className="w-5 h-5 text-[#FF0000]" />
+                    </div>
+                    <div className="text-left">
+                      <span className="font-medium">YouTube Music</span>
+                      <p className="text-xs text-muted-foreground">
+                        {youtubeProvider 
+                          ? `Connected ${formatDistanceToNow(new Date(youtubeProvider.connected_at))} ago`
+                          : 'Not connected'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {youtubeProvider && (
+                      <Check className="w-4 h-4 text-[#FF0000]" />
+                    )}
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </>
+              );
+            })()}
           </button>
 
           {/* Preferred Provider Selector */}
