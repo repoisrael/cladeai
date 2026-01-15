@@ -58,6 +58,38 @@ export type Database = {
           },
         ]
       }
+      feed_items: {
+        Row: {
+          created_at: string
+          id: string
+          rank: number
+          source: string
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rank?: number
+          source?: string
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rank?: number
+          source?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_items_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -65,6 +97,10 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          preferred_provider: string | null
+          twofa_backup_codes: string[] | null
+          twofa_enabled: boolean | null
+          twofa_secret: string | null
           updated_at: string
         }
         Insert: {
@@ -73,6 +109,10 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          preferred_provider?: string | null
+          twofa_backup_codes?: string[] | null
+          twofa_enabled?: boolean | null
+          twofa_secret?: string | null
           updated_at?: string
         }
         Update: {
@@ -81,7 +121,38 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          preferred_provider?: string | null
+          twofa_backup_codes?: string[] | null
+          twofa_enabled?: boolean | null
+          twofa_secret?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      search_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          market: string | null
+          query: string
+          results: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          market?: string | null
+          query: string
+          results: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          market?: string | null
+          query?: string
+          results?: Json
         }
         Relationships: []
       }
@@ -122,14 +193,20 @@ export type Database = {
           energy: number | null
           external_id: string
           id: string
+          isrc: string | null
           loop_length_bars: number | null
           preview_url: string | null
           progression_raw: string[] | null
           progression_roman: string[] | null
           provider: string
+          spotify_id: string | null
           title: string
           updated_at: string
+          url_spotify_app: string | null
+          url_spotify_web: string | null
+          url_youtube: string | null
           valence: number | null
+          youtube_id: string | null
         }
         Insert: {
           album?: string | null
@@ -146,14 +223,20 @@ export type Database = {
           energy?: number | null
           external_id: string
           id?: string
+          isrc?: string | null
           loop_length_bars?: number | null
           preview_url?: string | null
           progression_raw?: string[] | null
           progression_roman?: string[] | null
           provider: string
+          spotify_id?: string | null
           title: string
           updated_at?: string
+          url_spotify_app?: string | null
+          url_spotify_web?: string | null
+          url_youtube?: string | null
           valence?: number | null
+          youtube_id?: string | null
         }
         Update: {
           album?: string | null
@@ -170,14 +253,20 @@ export type Database = {
           energy?: number | null
           external_id?: string
           id?: string
+          isrc?: string | null
           loop_length_bars?: number | null
           preview_url?: string | null
           progression_raw?: string[] | null
           progression_roman?: string[] | null
           provider?: string
+          spotify_id?: string | null
           title?: string
           updated_at?: string
+          url_spotify_app?: string | null
+          url_spotify_web?: string | null
+          url_youtube?: string | null
           valence?: number | null
+          youtube_id?: string | null
         }
         Relationships: []
       }
@@ -239,6 +328,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_provider_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          provider: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          provider?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_providers: {
         Row: {
