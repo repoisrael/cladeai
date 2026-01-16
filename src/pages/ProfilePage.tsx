@@ -447,8 +447,8 @@ export default function ProfilePage() {
             {/* Play History List */}
             <div className="space-y-2">
               {playHistory.map((event) => {
-                const track = event.tracks;
-                if (!track) return null;
+                // Track info from event itself (no nested tracks in PlayEventData)
+                if (!event.track_id) return null;
 
                 return (
                   <motion.div

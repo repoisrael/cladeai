@@ -246,7 +246,12 @@ async function checkSearchCache(query: string, market: string): Promise<Track[] 
 
     if (error || !data) return null;
     
-    return data.results as Track[];
+    // Results is stored as JSON, need to parse it properly
+    const results = data.results;
+    if (Array.isArray(results)) {
+      return results as unknown as Track[];
+    }
+    return null;
   } catch (error) {
     console.error('Cache check failed:', error);
     return null;

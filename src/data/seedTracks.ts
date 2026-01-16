@@ -1,7 +1,11 @@
+// Seed tracks with known chord progressions for MVP
+// Uses Track type directly for compatibility
+
 import { Track } from '@/types';
 
-// Seed tracks with known chord progressions for MVP
-export const seedTracks: Track[] = [
+export type SeedTrack = Track;
+
+export const seedTracks: SeedTrack[] = [
   {
     id: 'seed-1',
     external_id: 'spotify:track:seed1',
@@ -20,6 +24,11 @@ export const seedTracks: Track[] = [
     energy: 0.8,
     danceability: 0.75,
     valence: 0.6,
+    spotify_id: '0VjIjW4GlUZAMYd2vXMi3b',
+    youtube_id: '4NRXx6U8ABQ',
+    url_spotify_web: 'https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b',
+    url_spotify_app: 'spotify:track:0VjIjW4GlUZAMYd2vXMi3b',
+    url_youtube: 'https://www.youtube.com/watch?v=4NRXx6U8ABQ',
   },
   {
     id: 'seed-2',
@@ -39,6 +48,11 @@ export const seedTracks: Track[] = [
     energy: 0.4,
     danceability: 0.45,
     valence: 0.3,
+    spotify_id: '3bNv3VuyjBrxfwNJU4sVTV',
+    youtube_id: 'hLQl3WQQoQ0',
+    url_spotify_web: 'https://open.spotify.com/track/3bNv3VuyjBrxfwNJU4sVTV',
+    url_spotify_app: 'spotify:track:3bNv3VuyjBrxfwNJU4sVTV',
+    url_youtube: 'https://www.youtube.com/watch?v=hLQl3WQQoQ0',
   },
   {
     id: 'seed-3',
@@ -58,6 +72,11 @@ export const seedTracks: Track[] = [
     energy: 0.9,
     danceability: 0.9,
     valence: 0.85,
+    spotify_id: '32OlwWuMpZ6b0aN2RZOeMS',
+    youtube_id: 'OPf0YbXqDm0',
+    url_spotify_web: 'https://open.spotify.com/track/32OlwWuMpZ6b0aN2RZOeMS',
+    url_spotify_app: 'spotify:track:32OlwWuMpZ6b0aN2RZOeMS',
+    url_youtube: 'https://www.youtube.com/watch?v=OPf0YbXqDm0',
   },
   {
     id: 'seed-4',
@@ -77,6 +96,11 @@ export const seedTracks: Track[] = [
     energy: 0.8,
     danceability: 0.7,
     valence: 0.75,
+    spotify_id: '2WfaOiMkCvy7F5fcp2zZ8L',
+    youtube_id: 'djV11Xbc914',
+    url_spotify_web: 'https://open.spotify.com/track/2WfaOiMkCvy7F5fcp2zZ8L',
+    url_spotify_app: 'spotify:track:2WfaOiMkCvy7F5fcp2zZ8L',
+    url_youtube: 'https://www.youtube.com/watch?v=djV11Xbc914',
   },
   {
     id: 'seed-5',
@@ -96,6 +120,11 @@ export const seedTracks: Track[] = [
     energy: 0.85,
     danceability: 0.88,
     valence: 0.65,
+    spotify_id: '5ChkMS8OtdzJeqyybCc9R5',
+    youtube_id: 'Zi_XLOBDo_Y',
+    url_spotify_web: 'https://open.spotify.com/track/5ChkMS8OtdzJeqyybCc9R5',
+    url_spotify_app: 'spotify:track:5ChkMS8OtdzJeqyybCc9R5',
+    url_youtube: 'https://www.youtube.com/watch?v=Zi_XLOBDo_Y',
   },
   {
     id: 'seed-6',
@@ -115,6 +144,11 @@ export const seedTracks: Track[] = [
     energy: 0.7,
     danceability: 0.35,
     valence: 0.5,
+    spotify_id: '7tFiyTwD0nx5a1eklYtX2J',
+    youtube_id: 'fJ9rUzIMcZQ',
+    url_spotify_web: 'https://open.spotify.com/track/7tFiyTwD0nx5a1eklYtX2J',
+    url_spotify_app: 'spotify:track:7tFiyTwD0nx5a1eklYtX2J',
+    url_youtube: 'https://www.youtube.com/watch?v=fJ9rUzIMcZQ',
   },
   {
     id: 'seed-7',
@@ -134,6 +168,11 @@ export const seedTracks: Track[] = [
     energy: 0.75,
     danceability: 0.82,
     valence: 0.7,
+    spotify_id: '7qiZfU4dY1lWllzX7mPBI3',
+    youtube_id: 'JGwWNGJdvx8',
+    url_spotify_web: 'https://open.spotify.com/track/7qiZfU4dY1lWllzX7mPBI3',
+    url_spotify_app: 'spotify:track:7qiZfU4dY1lWllzX7mPBI3',
+    url_youtube: 'https://www.youtube.com/watch?v=JGwWNGJdvx8',
   },
   {
     id: 'seed-8',
@@ -153,6 +192,11 @@ export const seedTracks: Track[] = [
     energy: 0.6,
     danceability: 0.55,
     valence: 0.5,
+    spotify_id: '40riOy7x9W7GXjyGp4pjAv',
+    youtube_id: 'EqPtz5qN7HM',
+    url_spotify_web: 'https://open.spotify.com/track/40riOy7x9W7GXjyGp4pjAv',
+    url_spotify_app: 'spotify:track:40riOy7x9W7GXjyGp4pjAv',
+    url_youtube: 'https://www.youtube.com/watch?v=EqPtz5qN7HM',
   },
 ];
 

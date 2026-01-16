@@ -14,21 +14,27 @@ export interface ProviderLink {
 export interface Track {
   id: string;
   title: string;
-  artists: string[]; // Array of artist names
+  artists?: string[]; // Array of artist names (optional for backward compatibility)
   album?: string;
   duration_ms?: number;
   artwork_url?: string;
   isrc?: string;
   
-  // Provider-specific data
-  providerIds: Record<MusicProvider, string>; // Map of provider -> provider track ID
-  providerLinks: ProviderLink[]; // Array of available provider links
+  // Provider-specific data (optional - populated by unified search)
+  providerIds?: Partial<Record<MusicProvider, string>>; // Map of provider -> provider track ID
+  providerLinks?: ProviderLink[]; // Array of available provider links
   
-  // Legacy fields for backward compatibility
+  // DB/legacy fields for backward compatibility
   external_id?: string;
   provider?: MusicProvider;
-  artist?: string;
+  artist?: string; // Single artist string from DB
   cover_url?: string;
+  preview_url?: string;
+  spotify_id?: string;
+  youtube_id?: string;
+  url_spotify_web?: string;
+  url_spotify_app?: string;
+  url_youtube?: string;
   preview_url?: string;
   
   // Harmonic fingerprint data

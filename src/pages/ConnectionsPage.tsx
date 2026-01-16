@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BottomNav } from '@/components/BottomNav';
-import { useTrackConnections } from '@/hooks/api/useConnections';
+import { useTrackConnections, TrackConnectionRow, ConnectionGraphData } from '@/hooks/api/useConnections';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft,
@@ -86,9 +86,9 @@ export default function ConnectionsPage() {
           className="p-6 glass rounded-2xl"
         >
           <div className="flex items-center gap-4">
-            {track.artwork_url && (
+            {track.cover_url && (
               <img
-                src={track.artwork_url}
+                src={track.cover_url}
                 alt={track.title}
                 className="w-20 h-20 rounded-xl object-cover"
               />
@@ -96,7 +96,7 @@ export default function ConnectionsPage() {
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-lg truncate">{track.title}</h2>
               <p className="text-muted-foreground truncate">
-                {track.artists?.join(', ') || track.artist}
+                {track.artist}
               </p>
               <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -128,24 +128,14 @@ export default function ConnectionsPage() {
             </div>
             <div className="p-4 glass rounded-2xl">
               <div className="flex items-center gap-3">
-                {most_popular_derivative.artwork_url && (
-                  <img
-                    src={most_popular_derivative.artwork_url}
-                    alt={most_popular_derivative.title}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                )}
+                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                  <Music className="w-8 h-8 text-muted-foreground" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium truncate">{most_popular_derivative.title}</h3>
                   <p className="text-sm text-muted-foreground truncate">
-                    {most_popular_derivative.artists?.join(', ')}
+                    {most_popular_derivative.artist}
                   </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <BadgeIcon className="w-3 h-3 text-primary" />
-                    <span className="text-xs text-primary font-medium">
-                      {most_popular_derivative.popularity_score || 0} plays
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -166,7 +156,7 @@ export default function ConnectionsPage() {
             </div>
             <div className="space-y-2">
               {upstream.map((connection, index) => {
-                const connType = CONNECTION_LABELS[connection.connection_type];
+                const connType = CONNECTION_LABELS[connection.connection_type] || CONNECTION_LABELS.sample;
                 return (
                   <motion.div
                     key={connection.id}
@@ -177,13 +167,9 @@ export default function ConnectionsPage() {
                     onClick={() => navigate(`/connections/${connection.from_track_id}`)}
                   >
                     <div className="flex items-center gap-3">
-                      {connection.track.artwork_url && (
-                        <img
-                          src={connection.track.artwork_url}
-                          alt={connection.track.title}
-                          className="w-14 h-14 rounded-lg object-cover"
-                        />
-                      )}
+                      <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                        <Music className="w-7 h-7 text-muted-foreground" />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`text-xs font-medium ${connType.color}`}>
@@ -195,9 +181,9 @@ export default function ConnectionsPage() {
                             </span>
                           )}
                         </div>
-                        <h3 className="font-medium truncate text-sm">{connection.track.title}</h3>
+                        <h3 className="font-medium truncate text-sm">Track {connection.from_track_id.slice(0, 8)}</h3>
                         <p className="text-xs text-muted-foreground truncate">
-                          {connection.track.artists?.join(', ')}
+                          Connection source
                         </p>
                       </div>
                     </div>
@@ -222,7 +208,7 @@ export default function ConnectionsPage() {
             </div>
             <div className="space-y-2">
               {downstream.map((connection, index) => {
-                const connType = CONNECTION_LABELS[connection.connection_type];
+                const connType = CONNECTION_LABELS[connection.connection_type] || CONNECTION_LABELS.sample;
                 return (
                   <motion.div
                     key={connection.id}
@@ -233,13 +219,9 @@ export default function ConnectionsPage() {
                     onClick={() => navigate(`/connections/${connection.to_track_id}`)}
                   >
                     <div className="flex items-center gap-3">
-                      {connection.track.artwork_url && (
-                        <img
-                          src={connection.track.artwork_url}
-                          alt={connection.track.title}
-                          className="w-14 h-14 rounded-lg object-cover"
-                        />
-                      )}
+                      <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                        <Music className="w-7 h-7 text-muted-foreground" />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`text-xs font-medium ${connType.color}`}>
@@ -251,9 +233,9 @@ export default function ConnectionsPage() {
                             </span>
                           )}
                         </div>
-                        <h3 className="font-medium truncate text-sm">{connection.track.title}</h3>
+                        <h3 className="font-medium truncate text-sm">Track {connection.to_track_id.slice(0, 8)}</h3>
                         <p className="text-xs text-muted-foreground truncate">
-                          {connection.track.artists?.join(', ')}
+                          Derivative work
                         </p>
                       </div>
                     </div>
