@@ -114,6 +114,41 @@ export type Database = {
         }
         Relationships: []
       }
+      play_history: {
+        Row: {
+          duration_ms: number | null
+          id: string
+          played_at: string
+          source: string | null
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          duration_ms?: number | null
+          id?: string
+          played_at?: string
+          source?: string | null
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          duration_ms?: number | null
+          id?: string
+          played_at?: string
+          source?: string | null
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "play_history_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -356,6 +391,27 @@ export type Database = {
           last_reset?: string
           monthly_allowance?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
         }
         Relationships: []
       }

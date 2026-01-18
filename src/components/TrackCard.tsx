@@ -1,14 +1,18 @@
-import { motion } from 'framer-motion';
-import { Heart, Bookmark, X, Sparkles, Waves, Play, Pause } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, Bookmark, X, Sparkles, Waves, Play, Pause, ChevronDown, ExternalLink, Music } from 'lucide-react';
 import { HarmonyCard } from './HarmonyCard';
 import { CommentsSheet } from './CommentsSheet';
 import { NearbyListenersSheet } from './NearbyListenersSheet';
 import { ShareSheet } from './ShareSheet';
+import { AudioPreview } from './AudioPreview';
+import { StreamingLinks } from './StreamingLinks';
 import { Button } from '@/components/ui/button';
 import { Track, InteractionType } from '@/types';
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useRecordListeningActivity } from '@/hooks/api/useNearbyListeners';
+import { useRecordPlay } from '@/hooks/api/useFollowing';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TrackCardProps {
   track: Track;
@@ -18,19 +22,87 @@ interface TrackCardProps {
 }
 
 export function TrackCard({ track, isActive, onInteraction, interactions = new Set() }: TrackCardProps) {
+  const { user } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showStreamingLinks, setShowStreamingLinks] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const playStartTimeRef = useRef<number | null>(null);
   const recordActivity = useRecordListeningActivity();
+  const recordPlay = useRecordPlay();
+
+  // Pause audio when card becomes inactive
+  useEffect(() => {
+    if (!isActive && isPlaying) {
+      handlePause();
+    }
+  }, [isActive]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
+  const handlePlay = useCallback(async () => {
+    if (audioRef.current && track.preview_url) {
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+        playStartTimeRef.current = Date.now();
+        
+        // Record listening activity
+        recordActivity.mutate({ 
+          trackId: track.id, 
+          artist: track.artist 
+        });
+      } catch (err) {
+        console.error('Playback failed:', err);
+      }
+    } else {
+      // No preview, show streaming links
+      setShowStreamingLinks(true);
+    }
+  }, [track.preview_url, track.id, track.artist, recordActivity]);
+
+  const handlePause = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+
+      // Record play duration
+      if (playStartTimeRef.current && user) {
+        const durationMs = Date.now() - playStartTimeRef.current;
+        recordPlay.mutate({
+          trackId: track.id,
+          durationMs,
+          source: 'feed',
+        });
+        playStartTimeRef.current = null;
+      }
+    }
+  }, [user, track.id, recordPlay]);
 
   const handlePlayPause = () => {
-    const newState = !isPlaying;
-    setIsPlaying(newState);
-    
-    // Record listening activity when playing
-    if (newState) {
-      recordActivity.mutate({ 
-        trackId: track.id, 
-        artist: track.artist 
+    if (isPlaying) {
+      handlePause();
+    } else {
+      handlePlay();
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+    if (playStartTimeRef.current && user) {
+      const durationMs = Date.now() - playStartTimeRef.current;
+      recordPlay.mutate({
+        trackId: track.id,
+        durationMs,
+        source: 'feed',
       });
+      playStartTimeRef.current = null;
     }
   };
 
@@ -44,6 +116,16 @@ export function TrackCard({ track, isActive, onInteraction, interactions = new S
       animate={{ opacity: isActive ? 1 : 0.5 }}
       className="relative w-full h-full flex flex-col"
     >
+      {/* Hidden audio element for preview playback */}
+      {track.preview_url && (
+        <audio
+          ref={audioRef}
+          src={track.preview_url}
+          preload="none"
+          onEnded={handleAudioEnded}
+        />
+      )}
+
       {/* Background with cover art */}
       <div className="absolute inset-0 z-0">
         {track.cover_url ? (
@@ -81,11 +163,12 @@ export function TrackCard({ track, isActive, onInteraction, interactions = new S
           </motion.p>
         </div>
 
-        {/* Play button */}
+        {/* Play button and streaming links */}
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1 }}
+          className="flex items-center gap-2"
         >
           <Button
             variant="outline"
@@ -98,9 +181,44 @@ export function TrackCard({ track, isActive, onInteraction, interactions = new S
             ) : (
               <Play className="w-5 h-5" />
             )}
-            {isPlaying ? 'Pause' : 'Play Hook'}
+            {isPlaying ? 'Pause' : track.preview_url ? 'Play Preview' : 'Listen'}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="glass border-white/20 hover:bg-white/10"
+            onClick={() => setShowStreamingLinks(!showStreamingLinks)}
+          >
+            <ChevronDown className={cn('w-5 h-5 transition-transform', showStreamingLinks && 'rotate-180')} />
           </Button>
         </motion.div>
+
+        {/* Streaming Links Dropdown */}
+        <AnimatePresence>
+          {showStreamingLinks && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="py-2">
+                <StreamingLinks
+                  track={{
+                    spotifyId: track.spotify_id || undefined,
+                    youtubeId: track.youtube_id || undefined,
+                    urlSpotifyWeb: track.url_spotify_web || undefined,
+                    urlSpotifyApp: track.url_spotify_app || undefined,
+                    urlYoutube: track.url_youtube || undefined,
+                  }}
+                  compact
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Harmony card */}
         {track.progression_roman && track.progression_roman.length > 0 && (
