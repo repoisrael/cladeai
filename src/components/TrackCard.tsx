@@ -1,11 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Bookmark, X, Sparkles, Waves, Play, Pause, ChevronDown, ExternalLink, Music } from 'lucide-react';
+import { Heart, Bookmark, X, Sparkles, Waves, Play, Pause, ChevronDown, ExternalLink, Music, Youtube } from 'lucide-react';
 import { HarmonyCard } from './HarmonyCard';
 import { CommentsSheet } from './CommentsSheet';
 import { NearbyListenersSheet } from './NearbyListenersSheet';
 import { ShareSheet } from './ShareSheet';
 import { AudioPreview } from './AudioPreview';
 import { StreamingLinks } from './StreamingLinks';
+import { YouTubeEmbed } from './YouTubeEmbed';
 import { Button } from '@/components/ui/button';
 import { Track, InteractionType } from '@/types';
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -25,6 +26,7 @@ export function TrackCard({ track, isActive, onInteraction, interactions = new S
   const { user } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showStreamingLinks, setShowStreamingLinks] = useState(false);
+  const [showYouTubeEmbed, setShowYouTubeEmbed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const playStartTimeRef = useRef<number | null>(null);
   const recordActivity = useRecordListeningActivity();
@@ -163,6 +165,24 @@ export function TrackCard({ track, isActive, onInteraction, interactions = new S
           </motion.p>
         </div>
 
+        {/* YouTube Embed Player */}
+        <AnimatePresence>
+          {showYouTubeEmbed && track.youtube_id && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="mb-4"
+            >
+              <YouTubeEmbed
+                videoId={track.youtube_id}
+                title={`${track.title} - ${track.artist}`}
+                onClose={() => setShowYouTubeEmbed(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Play button and streaming links */}
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -183,6 +203,24 @@ export function TrackCard({ track, isActive, onInteraction, interactions = new S
             )}
             {isPlaying ? 'Pause' : track.preview_url ? 'Play Preview' : 'Listen'}
           </Button>
+
+          {/* YouTube embed button - inline play without leaving the app */}
+          {track.youtube_id && (
+            <Button
+              variant={showYouTubeEmbed ? 'default' : 'outline'}
+              size="lg"
+              onClick={() => setShowYouTubeEmbed(!showYouTubeEmbed)}
+              className={cn(
+                'gap-2',
+                showYouTubeEmbed
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'glass border-white/20 hover:bg-white/10'
+              )}
+            >
+              <Youtube className="w-5 h-5" />
+              {showYouTubeEmbed ? 'Hide' : 'Watch'}
+            </Button>
+          )}
 
           <Button
             variant="ghost"
