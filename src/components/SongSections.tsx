@@ -16,16 +16,22 @@ interface SongSectionsProps {
 const sectionColors: Record<SongSectionType, string> = {
   intro: 'from-blue-500/20 to-blue-600/10',
   verse: 'from-purple-500/20 to-purple-600/10',
+  'pre-chorus': 'from-indigo-500/20 to-indigo-600/10',
   chorus: 'from-pink-500/20 to-pink-600/10',
   bridge: 'from-orange-500/20 to-orange-600/10',
+  breakdown: 'from-red-500/20 to-red-600/10',
+  drop: 'from-yellow-500/20 to-yellow-600/10',
   outro: 'from-teal-500/20 to-teal-600/10',
 };
 
 const sectionIcons: Record<SongSectionType, string> = {
   intro: '🎬',
   verse: '📝',
+  'pre-chorus': '🎵',
   chorus: '🎤',
   bridge: '🌉',
+  breakdown: '💥',
+  drop: '⚡',
   outro: '🎭',
 };
 

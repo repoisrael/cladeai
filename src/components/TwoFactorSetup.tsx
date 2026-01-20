@@ -12,13 +12,12 @@ import {
 } from '@/components/ui/dialog';
 import { 
   generateSecret, 
-  generateBackupCodes, 
-  generateQRCodeUrl, 
-  verifyTOTP,
+  generateBackupCodes,
   hashBackupCode 
 } from '@/lib/totp';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import QRCode from 'qrcode';
 
 interface TwoFactorSetupProps {
   isOpen: boolean;
@@ -29,6 +28,15 @@ interface TwoFactorSetupProps {
 }
 
 type SetupStep = 'intro' | 'scan' | 'verify' | 'backup' | 'complete';
+
+/**
+ * Generate QR code locally (no external API)
+ * SECURITY: Keeps TOTP secret in browser, not sent to third party
+ */
+async function generateQRCodeDataUrl(secret: string, email: string, issuer = 'HarmonyHub'): Promise<string> {
+  const otpauth = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+  return await QRCode.toDataURL(otpauth, { width: 200, margin: 2 });
+}
 
 export function TwoFactorSetup({ 
   isOpen, 
@@ -51,7 +59,8 @@ export function TwoFactorSetup({
       // Generate new secret when dialog opens
       const newSecret = generateSecret();
       setSecret(newSecret);
-      setQrUrl(generateQRCodeUrl(newSecret, userEmail));
+      // Generate QR code locally (no external API call)
+      generateQRCodeDataUrl(newSecret, userEmail).then(setQrUrl);
       setBackupCodes(generateBackupCodes());
     }
   }, [isOpen, step, userEmail]);
@@ -78,30 +87,25 @@ export function TwoFactorSetup({
     setIsVerifying(true);
     
     try {
-      const isValid = await verifyTOTP(secret, verificationCode);
-      
-      if (!isValid) {
-        toast.error('Invalid code. Please try again.');
-        setIsVerifying(false);
-        return;
-      }
-
       // Hash backup codes for storage
       const hashedCodes = await Promise.all(
         backupCodes.map(code => hashBackupCode(code))
       );
 
-      // Save to database
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          twofa_enabled: true,
-          twofa_secret: secret,
-          twofa_backup_codes: hashedCodes,
-        })
-        .eq('id', userId);
+      // SECURITY: Call Edge Function to verify and store 2FA server-side
+      const { data, error } = await supabase.functions.invoke('setup_2fa', {
+        body: { 
+          secret, 
+          code: verificationCode,
+          backup_codes: hashedCodes 
+        },
+      });
 
-      if (error) throw error;
+      if (error || !data?.success) {
+        toast.error(data?.error || 'Invalid code. Please try again.');
+        setIsVerifying(false);
+        return;
+      }
 
       setStep('backup');
     } catch (error) {

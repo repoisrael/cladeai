@@ -46,3 +46,44 @@ BEGIN
   RETURN true;
 END;
 $$;
+
+-- Function to disable 2FA
+CREATE OR REPLACE FUNCTION public.disable_2fa_secure(p_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Remove 2FA secret
+  DELETE FROM public.secure_2fa_secrets WHERE user_id = p_user_id;
+  
+  -- Update profiles to mark 2FA as disabled
+  UPDATE public.profiles
+  SET twofa_enabled = false
+  WHERE id = p_user_id;
+  
+  RETURN true;
+END;
+$$;
+
+-- Function to check if 2FA is enabled for a user (safe to call from client)
+CREATE OR REPLACE FUNCTION public.is_2fa_enabled(p_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(
+    (SELECT twofa_enabled FROM public.profiles WHERE id = p_user_id),
+    false
+  );
+$$;
+
+-- Remove the old twofa_secret column from profiles if it exists
+-- (Keep twofa_enabled and twofa_backup_codes for backwards compatibility during migration)
+-- DO NOT remove columns in production without data migration first
+-- ALTER TABLE public.profiles DROP COLUMN IF EXISTS twofa_secret;
+
+COMMENT ON TABLE public.secure_2fa_secrets IS 'Secure storage for 2FA TOTP secrets. Only accessible via service_role for security.';
