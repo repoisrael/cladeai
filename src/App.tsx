@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { PlayerProvider } from "@/player/PlayerContext";
+import { EmbeddedPlayerDrawer } from "@/player/EmbeddedPlayerDrawer";
 import { LoadingSpinner } from "@/components/shared";
 
 // Lazy load pages for code splitting
@@ -33,26 +35,29 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<FeedPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/compare" element={<ComparePage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/following" element={<FollowingPage />} />
-              <Route path="/connections/:trackId" element={<ConnectionsPage />} />
-              <Route path="/spotify-callback" element={<SpotifyCallbackPage />} />
-              <Route path="/album/:albumId" element={<AlbumPage />} />
-              <Route path="/artist/:artistId" element={<ArtistPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <PlayerProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<FeedPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/compare" element={<ComparePage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/following" element={<FollowingPage />} />
+                <Route path="/connections/:trackId" element={<ConnectionsPage />} />
+                <Route path="/spotify-callback" element={<SpotifyCallbackPage />} />
+                <Route path="/album/:albumId" element={<AlbumPage />} />
+                <Route path="/artist/:artistId" element={<ArtistPage />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <EmbeddedPlayerDrawer />
+          </BrowserRouter>
+        </PlayerProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
