@@ -1,15 +1,44 @@
 // Music service providers
 export type MusicProvider = 'spotify' | 'apple_music' | 'deezer' | 'soundcloud' | 'youtube' | 'amazon_music';
 
-// Song section types
-export type SongSectionType = 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro';
+// Song section types (canonical labels)
+export type SongSectionType = 'intro' | 'verse' | 'pre-chorus' | 'chorus' | 'bridge' | 'outro' | 'breakdown' | 'drop';
 
-// Song section with timestamp for YouTube embed
+// Song section with timestamp for YouTube embed (legacy inline format)
 export interface SongSection {
   type: SongSectionType;
   label?: string; // e.g., "Verse 1", "Chorus", "Bridge"
   start_time: number; // in seconds
   end_time?: number; // in seconds (optional)
+}
+
+// Track section from database (canonical, provider-agnostic)
+export interface TrackSection {
+  id: string;
+  track_id: string;
+  label: SongSectionType;
+  start_ms: number;
+  end_ms: number;
+  created_at: string;
+}
+
+// Playback provider for player context
+export type PlaybackProvider = 'youtube' | 'spotify_sdk' | 'spotify_embed' | 'apple_music';
+
+// Playback mode
+export type PlaybackMode = 'watch' | 'listen';
+
+// Player state for context
+export interface PlayerState {
+  isPlaying: boolean;
+  currentTrackId: string | null;
+  currentProvider: PlaybackProvider;
+  playbackMode: PlaybackMode;
+  activeSection: TrackSection | null;
+  currentTime: number; // in seconds
+  duration: number; // in seconds
+  volume: number; // 0-100
+  isMuted: boolean;
 }
 
 // Provider link information
