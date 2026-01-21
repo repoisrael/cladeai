@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minimize2, Maximize2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface FloatingPlayerProps {
@@ -13,10 +13,19 @@ interface FloatingPlayerProps {
 
 export function FloatingPlayer({ type, trackId, title, artist, onClose }: FloatingPlayerProps) {
   const [isMinimized, setIsMinimized] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [currentTrackId, setCurrentTrackId] = useState(trackId);
 
   const embedUrl = type === 'spotify'
-    ? `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`
-    : `https://www.youtube.com/embed/${trackId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+    ? `https://open.spotify.com/embed/track/${currentTrackId}?utm_source=generator&theme=0`
+    : `https://www.youtube.com/embed/${currentTrackId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+
+  // Update iframe src when trackId changes without remounting
+  useEffect(() => {
+    if (trackId !== currentTrackId && iframeRef.current) {
+      setCurrentTrackId(trackId);
+    }
+  }, [trackId, currentTrackId]);
 
   return (
     <AnimatePresence>
@@ -71,6 +80,8 @@ export function FloatingPlayer({ type, trackId, title, artist, onClose }: Floati
             type === 'spotify' ? 'h-[304px]' : 'h-[192px]'
           )}>
             <iframe
+              ref={iframeRef}
+              key={`${type}-player`}
               src={embedUrl}
               width="100%"
               height="100%"
@@ -79,6 +90,7 @@ export function FloatingPlayer({ type, trackId, title, artist, onClose }: Floati
               loading="lazy"
               className="w-full h-full"
               style={{ borderRadius: '0' }}
+              sandbox="allow-same-origin allow-scripts allow-presentation allow-forms"
             />
           </div>
         )}

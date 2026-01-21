@@ -52,6 +52,7 @@ export function FloatingPlayersProvider({ children }: { children: ReactNode }) {
         <div className="pointer-events-auto">
           {youtubePlayer && (
             <FloatingPlayer
+              key="youtube-player"
               type="youtube"
               trackId={youtubePlayer.trackId}
               title={youtubePlayer.title}
@@ -63,6 +64,7 @@ export function FloatingPlayersProvider({ children }: { children: ReactNode }) {
         <div className="pointer-events-auto">
           {spotifyPlayer && (
             <FloatingPlayer
+              key="spotify-player"
               type="spotify"
               trackId={spotifyPlayer.trackId}
               title={spotifyPlayer.title}
