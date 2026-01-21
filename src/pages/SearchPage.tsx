@@ -94,8 +94,11 @@ export default function SearchPage() {
       setSearchHistory(getSearchHistory());
     }
     
-    // Navigate to track detail page
-    navigate(`/track/${encodeURIComponent(track.id)}`);
+    // Navigate to track detail page with proper ID encoding
+    const trackId = track.id || track.spotify_id || track.external_id;
+    if (trackId) {
+      navigate(`/track/${encodeURIComponent(trackId)}`);
+    }
   };
 
   const handleRemoveHistory = (id: string, e: React.MouseEvent) => {
