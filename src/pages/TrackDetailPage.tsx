@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTrack } from '@/hooks/api/useTracks';
+import { useYouTubePlayer } from '@/contexts/YouTubePlayerContext';
 import { BottomNav } from '@/components/BottomNav';
 import { ChordBadge } from '@/components/ChordBadge';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
@@ -35,13 +36,14 @@ export default function TrackDetailPage() {
   const { trackId } = useParams();
   const navigate = useNavigate();
   const { data: track, isLoading } = useTrack(decodeURIComponent(trackId || ''));
+  const { playVideo, currentVideo } = useYouTubePlayer();
   
   const [sections, setSections] = useState<TrackSection[]>([]);
-  const [currentPipVideo, setCurrentPipVideo] = useState<VideoSource | null>(null);
   const [hooktheoryData, setHooktheoryData] = useState<any>(null);
   const [whoSampledData, setWhoSampledData] = useState<any>(null);
   const [youtubeVideos, setYoutubeVideos] = useState<VideoSource[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   
   // Load sections when track is available
   useEffect(() => {
@@ -67,9 +69,16 @@ export default function TrackDetailPage() {
       }));
       setYoutubeVideos(videos);
       
-      // Auto-start first video if available and no current video
-      if (videos.length > 0 && !currentPipVideo) {
-        setCurrentPipVideo(videos[0]);
+      // Auto-play first video using persistent player
+      if (videos.length > 0 && track.artist && track.title) {
+        const firstVideo = videos[0];
+        setActiveVideoId(firstVideo.videoId);
+        playVideo({
+          videoId: firstVideo.videoId,
+          title: track.title,
+          artist: track.artist,
+          startSeconds: 0,
+        });
       }
     } catch (err) {
       console.error('Failed to load YouTube videos:', err);
@@ -199,22 +208,27 @@ export default function TrackDetailPage() {
   }
 
   function handleSectionClick(section: TrackSection) {
-    if (!track?.youtube_id) return;
+    if (!activeVideoId || !track?.artist || !track?.title) return;
     
     const startSeconds = Math.floor(section.start_ms / 1000);
-    const video: VideoSource = {
-      id: section.id,
-      videoId: track.youtube_id,
-      title: `${track.title} - ${section.label}`,
-      type: 'official',
-    };
-    
-    setCurrentPipVideo(video);
+    playVideo({
+      videoId: activeVideoId,
+      title: track.title,
+      artist: track.artist,
+      startSeconds,
+    });
   }
 
   function handlePlayVideo(video: VideoSource) {
-    // Only play one video at a time
-    setCurrentPipVideo(video);
+    if (!track?.artist || !track?.title) return;
+    
+    setActiveVideoId(video.videoId);
+    playVideo({
+      videoId: video.videoId,
+      title: track.title,
+      artist: track.artist,
+      startSeconds: 0,
+    });
   }
 
   // Use YouTube search results, or fallback to track's youtube_id if available
@@ -228,23 +242,6 @@ export default function TrackDetailPage() {
         type: 'official',
       }]
     : [];
-
-  // Auto-start from intro on first load
-  useEffect(() => {
-    if (!track || !sections.length || currentPipVideo) return;
-    
-    const introSection = sections.find(s => s.label === 'intro');
-    if (introSection && track.youtube_id) {
-      const startSeconds = Math.floor(introSection.start_ms / 1000);
-      const video: VideoSource = {
-        id: 'auto-intro',
-        videoId: track.youtube_id,
-        title: `${track.title}`,
-        type: 'official',
-      };
-      setCurrentPipVideo(video);
-    }
-  }, [track, sections]);
 
   if (isLoading || !track) {
     return (
@@ -310,6 +307,27 @@ export default function TrackDetailPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Embedded YouTube Player */}
+        {currentVideo && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-2xl mx-auto"
+          >
+            <div className="aspect-video rounded-lg overflow-hidden shadow-xl">
+              <iframe
+                src={`https://www.youtube.com/embed/${currentVideo.videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1${
+                  currentVideo.startSeconds ? `&start=${currentVideo.startSeconds}` : ''
+                }`}
+                title={currentVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </motion.div>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="sections" className="w-full">
@@ -415,28 +433,6 @@ export default function TrackDetailPage() {
 
           {/* Videos Tab */}
           <TabsContent value="videos" className="space-y-3">
-            {/* Embedded Video Player */}
-            {currentPipVideo && (
-              <Card className="p-3 mb-3">
-                <div className="aspect-video w-full max-w-md mx-auto rounded-lg overflow-hidden">
-                  <YouTubeEmbed
-                    key={currentPipVideo.id}
-                    videoId={currentPipVideo.videoId}
-                    title={currentPipVideo.title}
-                    startSeconds={
-                      currentPipVideo.id.includes('intro') || currentPipVideo.id.includes('auto')
-                        ? Math.floor((sections.find(s => s.label === 'intro')?.start_ms || 0) / 1000)
-                        : undefined
-                    }
-                    onClose={() => setCurrentPipVideo(null)}
-                    onPipModeChange={(isPip) => {
-                      if (!isPip) setCurrentPipVideo(null);
-                    }}
-                  />
-                </div>
-              </Card>
-            )}
-            
             <Card className="p-4">
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                 Available Videos
@@ -464,7 +460,7 @@ export default function TrackDetailPage() {
                             {video.type}
                           </div>
                         </div>
-                        {currentPipVideo?.id === video.id && (
+                        {activeVideoId === video.videoId && (
                           <span className="text-xs text-primary">Playing</span>
                         )}
                       </button>

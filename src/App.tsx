@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { PlayerProvider } from "@/player/PlayerContext";
+import { YouTubePlayerProvider } from "@/contexts/YouTubePlayerContext";
 import { EmbeddedPlayerDrawer } from "@/player/EmbeddedPlayerDrawer";
 import { LoadingSpinner } from "@/components/shared";
 
@@ -36,30 +37,32 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <PlayerProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter basename="/cladeai">
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<FeedPage />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/compare" element={<ComparePage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/following" element={<FollowingPage />} />
-                <Route path="/connections/:trackId" element={<ConnectionsPage />} />
-                <Route path="/spotify-callback" element={<SpotifyCallbackPage />} />
-                <Route path="/album/:albumId" element={<AlbumPage />} />
-                <Route path="/artist/:artistId" element={<ArtistPage />} />
-                <Route path="/track/:trackId" element={<TrackDetailPage />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-            <EmbeddedPlayerDrawer />
-          </BrowserRouter>
-        </PlayerProvider>
+        <YouTubePlayerProvider>
+          <PlayerProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter basename="/cladeai">
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<FeedPage />} />
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/search" element={<SearchPage />} />
+                  <Route path="/compare" element={<ComparePage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/following" element={<FollowingPage />} />
+                  <Route path="/connections/:trackId" element={<ConnectionsPage />} />
+                  <Route path="/spotify-callback" element={<SpotifyCallbackPage />} />
+                  <Route path="/album/:albumId" element={<AlbumPage />} />
+                  <Route path="/artist/:artistId" element={<ArtistPage />} />
+                  <Route path="/track/:trackId" element={<TrackDetailPage />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+              <EmbeddedPlayerDrawer />
+            </BrowserRouter>
+          </PlayerProvider>
+        </YouTubePlayerProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
