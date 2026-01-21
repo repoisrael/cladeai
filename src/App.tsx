@@ -20,6 +20,7 @@ const FollowingPage = lazy(() => import("./pages/FollowingPage"));
 const SpotifyCallbackPage = lazy(() => import("./pages/SpotifyCallbackPage"));
 const AlbumPage = lazy(() => import("./pages/AlbumPage"));
 const ArtistPage = lazy(() => import("./pages/ArtistPage"));
+const TrackDetailPage = lazy(() => import("./pages/TrackDetailPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
                 <Route path="/spotify-callback" element={<SpotifyCallbackPage />} />
                 <Route path="/album/:albumId" element={<AlbumPage />} />
                 <Route path="/artist/:artistId" element={<ArtistPage />} />
+                <Route path="/track/:trackId" element={<TrackDetailPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

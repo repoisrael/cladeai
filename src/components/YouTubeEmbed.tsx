@@ -7,17 +7,21 @@ import { cn } from '@/lib/utils';
 interface YouTubeEmbedProps {
   videoId: string;
   title?: string;
-  startTime?: number; // Start time in seconds
+  startTime?: number; // Start time in seconds (legacy prop)
+  startSeconds?: number; // Start time in seconds (new prop)
   endTime?: number; // End time in seconds
   onClose?: () => void;
   onPipModeChange?: (isPip: boolean) => void;
   className?: string;
 }
 
-export function YouTubeEmbed({ videoId, title, startTime, endTime, onClose, onPipModeChange, className }: YouTubeEmbedProps) {
+export function YouTubeEmbed({ videoId, title, startTime, startSeconds, endTime, onClose, onPipModeChange, className }: YouTubeEmbedProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPipMode, setIsPipMode] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Use startSeconds if provided, otherwise fall back to startTime
+  const effectiveStartTime = startSeconds !== undefined ? startSeconds : startTime;
 
   // Build embed URL with parameters for inline playback and timestamps
   const buildEmbedUrl = () => {
@@ -29,8 +33,8 @@ export function YouTubeEmbed({ videoId, title, startTime, endTime, onClose, onPi
       enablejsapi: '1',
     });
     
-    if (startTime !== undefined) {
-      params.append('start', Math.floor(startTime).toString());
+    if (effectiveStartTime !== undefined) {
+      params.append('start', Math.floor(effectiveStartTime).toString());
     }
     
     if (endTime !== undefined) {
