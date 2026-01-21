@@ -1,3 +1,10 @@
+# 🎵 CladeAI
+
+A music discovery app that helps you find songs based on **harmonic progressions** and connect with listeners who share your taste.
+
+![React](https://img.shields.io/badge/React-18-blue?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-5-purple?logo=vite)
 # 🎵 Harmony Hub
 
 A music discovery app that helps you find songs based on **harmonic progressions** and connect with listeners who share your taste.
@@ -11,37 +18,23 @@ A music discovery app that helps you find songs based on **harmonic progressions
 ## ✨ Features
 
 ### 🎶 Harmonic Discovery
-- **Chord Progression Search** — Find songs by their harmonic structure (e.g., vi–IV–I–V)
-- **Progression Archetypes** — Explore popular chord patterns like the "Axis of Awesome" or "50s Progression"
-- **Taste DNA** — Track your listening preferences and favorite progressions
 
 ### 🎧 Multi-Platform Streaming
-- **Spotify Integration** — Connect your Spotify account to sync listening history
-- **Quick Stream Buttons** — One-tap access to play songs on Spotify or YouTube
-- **Embedded YouTube Player** — Watch music videos without leaving the app
 
 ### 👥 Social Features
-- **Follow Friends** — See what others are listening to
-- **Nearby Listeners** — Discover people nearby playing the same tracks
-- **Comments & Reactions** — Discuss songs with the community
 
 ### 🔗 Track Connections
-- **Sample Relationships** — See which songs sample or are sampled by others
-- **Cover Versions** — Discover original versions and covers
-- **Interpolations** — Find songs with similar melodic elements
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Node.js 18+** (we recommend using [nvm](https://github.com/nvm-sh/nvm))
-- **Bun** (optional, for faster installs) or **npm/yarn**
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/repoisrael/harmony-hub.git
+git clone https://github.com/repoisrael/cladeai.git
 cd harmony-hub
 
 # Install dependencies
@@ -140,17 +133,13 @@ bun run build
 ```
 
 
-Recommended platforms:
-- **GitHub Pages** — Free static hosting (see below)
-- **Vercel** — Zero-config React deployment
-- **Netlify** — Great for static sites
 - **Cloudflare Pages** — Edge-first hosting
 
 ### Deploying to GitHub Pages
 
 1. Make sure your `package.json` includes:
 
-  ```json
+  "homepage": "https://repoisrael.github.io/cladeai",
   "homepage": "https://repoisrael.github.io/harmony-hub",
   "scripts": {
     "predeploy": "bun run build",
@@ -185,7 +174,6 @@ Your site will be live at https://repoisrael.github.io/harmony-hub
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
 ---
 
 <p align="center">
