@@ -236,7 +236,12 @@ export default function SearchPage() {
                       {track.progression_roman && (
                         <div className="flex gap-1 mt-2 flex-wrap">
                           {track.progression_roman.map((chord, i) => (
-                            <ChordBadge key={i} chord={chord} size="sm" />
+                            <ChordBadge 
+                              key={i} 
+                              chord={chord} 
+                              size="sm" 
+                              keySignature={track.detected_key}
+                            />
                           ))}
                         </div>
                       )}

@@ -17,6 +17,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { ChordBadge } from '@/components/ChordBadge';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { getTrackSections } from '@/api/trackSections';
+import { searchYouTubeVideos, VideoResult } from '@/services/youtubeSearchService';
 import { TrackSection, Track } from '@/types';
 import { ArrowLeft, Play, Music2, Link as LinkIcon, ExternalLink, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ interface VideoSource {
   id: string;
   videoId: string;
   title: string;
-  type: 'official' | 'cover' | 'live' | 'instrumental';
+  type: 'official' | 'cover' | 'live' | 'instrumental' | 'lyric' | 'audio';
 }
 
 export default function TrackDetailPage() {
@@ -39,6 +40,8 @@ export default function TrackDetailPage() {
   const [currentPipVideo, setCurrentPipVideo] = useState<VideoSource | null>(null);
   const [hooktheoryData, setHooktheoryData] = useState<any>(null);
   const [whoSampledData, setWhoSampledData] = useState<any>(null);
+  const [youtubeVideos, setYoutubeVideos] = useState<VideoSource[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
   
   // Load sections when track is available
   useEffect(() => {
@@ -47,7 +50,33 @@ export default function TrackDetailPage() {
     loadSections();
     loadHooktheoryData();
     loadWhoSampledData();
+    loadYouTubeVideos();
   }, [track?.id]);
+
+  async function loadYouTubeVideos() {
+    if (!track?.artist || !track?.title) return;
+    
+    setLoadingVideos(true);
+    try {
+      const results = await searchYouTubeVideos(track.artist, track.title);
+      const videos: VideoSource[] = results.map(r => ({
+        id: r.videoId,
+        videoId: r.videoId,
+        title: r.title,
+        type: r.type,
+      }));
+      setYoutubeVideos(videos);
+      
+      // Auto-start first video if available and no current video
+      if (videos.length > 0 && !currentPipVideo) {
+        setCurrentPipVideo(videos[0]);
+      }
+    } catch (err) {
+      console.error('Failed to load YouTube videos:', err);
+    } finally {
+      setLoadingVideos(false);
+    }
+  }
 
   async function loadSections() {
     if (!track?.id) return;
@@ -188,15 +217,17 @@ export default function TrackDetailPage() {
     setCurrentPipVideo(video);
   }
 
-  const videoSources: VideoSource[] = track?.youtube_id ? [
-    {
-      id: 'official',
-      videoId: track.youtube_id,
-      title: `${track.title} - Official`,
-      type: 'official',
-    },
-    // TODO: Add more video sources from YouTube search API
-  ] : [];
+  // Use YouTube search results, or fallback to track's youtube_id if available
+  const videoSources: VideoSource[] = youtubeVideos.length > 0 
+    ? youtubeVideos
+    : track?.youtube_id 
+    ? [{
+        id: 'official',
+        videoId: track.youtube_id,
+        title: `${track.title} - Official`,
+        type: 'official',
+      }]
+    : [];
 
   // Auto-start from intro on first load
   useEffect(() => {
@@ -337,12 +368,16 @@ export default function TrackDetailPage() {
                 <div className="space-y-3">
                   <div className="flex gap-2 flex-wrap">
                     {track.progression_roman.map((chord, i) => (
-                      <ChordBadge key={i} chord={chord} />
+                      <ChordBadge 
+                        key={i} 
+                        chord={chord} 
+                        keySignature={track.detected_key}
+                      />
                     ))}
                   </div>
                   {track.detected_key && (
                     <p className="text-sm text-muted-foreground">
-                      in {track.detected_key} {track.detected_mode}
+                      Key: {track.detected_key} {track.detected_mode}
                     </p>
                   )}
                 </div>
@@ -380,62 +415,75 @@ export default function TrackDetailPage() {
 
           {/* Videos Tab */}
           <TabsContent value="videos" className="space-y-3">
+            {/* Embedded Video Player */}
+            {currentPipVideo && (
+              <Card className="p-3 mb-3">
+                <div className="aspect-video w-full max-w-md mx-auto rounded-lg overflow-hidden">
+                  <YouTubeEmbed
+                    key={currentPipVideo.id}
+                    videoId={currentPipVideo.videoId}
+                    title={currentPipVideo.title}
+                    startSeconds={
+                      currentPipVideo.id.includes('intro') || currentPipVideo.id.includes('auto')
+                        ? Math.floor((sections.find(s => s.label === 'intro')?.start_ms || 0) / 1000)
+                        : undefined
+                    }
+                    onClose={() => setCurrentPipVideo(null)}
+                    onPipModeChange={(isPip) => {
+                      if (!isPip) setCurrentPipVideo(null);
+                    }}
+                  />
+                </div>
+              </Card>
+            )}
+            
             <Card className="p-4">
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                 Available Videos
               </h3>
               <div className="space-y-2">
-                {videoSources.map((video) => (
-                  <button
-                    key={video.id}
-                    onClick={() => handlePlayVideo(video)}
-                    className="w-full p-3 glass rounded-lg text-left hover:bg-muted/50 transition-colors flex items-center gap-3"
-                  >
-                    <Play className="w-4 h-4 text-primary flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{video.title}</div>
-                      <div className="text-xs text-muted-foreground capitalize">
-                        {video.type}
-                      </div>
-                    </div>
-                    {currentPipVideo?.id === video.id && (
-                      <span className="text-xs text-primary">Playing</span>
-                    )}
-                  </button>
-                ))}
-                {videoSources.length === 0 && (
+                {loadingVideos ? (
                   <div className="text-center py-8">
-                    <Music2 className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <Music2 className="w-8 h-8 text-muted-foreground mx-auto mb-2 animate-pulse" />
                     <p className="text-sm text-muted-foreground">
-                      No videos available
+                      Searching YouTube...
                     </p>
                   </div>
+                ) : (
+                  <>
+                    {videoSources.map((video) => (
+                      <button
+                        key={video.id}
+                        onClick={() => handlePlayVideo(video)}
+                        className="w-full p-3 glass rounded-lg text-left hover:bg-muted/50 transition-colors flex items-center gap-3"
+                      >
+                        <Play className="w-4 h-4 text-primary flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{video.title}</div>
+                          <div className="text-xs text-muted-foreground capitalize">
+                            {video.type}
+                          </div>
+                        </div>
+                        {currentPipVideo?.id === video.id && (
+                          <span className="text-xs text-primary">Playing</span>
+                        )}
+                      </button>
+                    ))}
+                    {videoSources.length === 0 && (
+                      <div className="text-center py-8">
+                        <Music2 className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          No videos available
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </Card>
           </TabsContent>
         </Tabs>
       </main>
-
-      {/* Picture-in-Picture Video Player */}
-      <AnimatePresence>
-        {currentPipVideo && (
-          <YouTubeEmbed
-            key={currentPipVideo.id}
-            videoId={currentPipVideo.videoId}
-            title={currentPipVideo.title}
-            startSeconds={
-              currentPipVideo.id.includes('intro') || currentPipVideo.id.includes('auto')
-                ? Math.floor((sections.find(s => s.label === 'intro')?.start_ms || 0) / 1000)
-                : undefined
-            }
-            onClose={() => setCurrentPipVideo(null)}
-            onPipModeChange={(isPip) => {
-              if (!isPip) setCurrentPipVideo(null);
-            }}
-          />
-        )}
-      </AnimatePresence>
 
       <BottomNav />
     </div>

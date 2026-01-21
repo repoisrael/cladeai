@@ -52,7 +52,11 @@ export function HarmonyCard({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
             >
-              <ChordBadge chord={chord} size="md" />
+              <ChordBadge 
+                chord={chord} 
+                size="md" 
+                keySignature={track.detected_key}
+              />
             </motion.div>
           ))}
         </div>
