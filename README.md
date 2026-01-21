@@ -1,6 +1,8 @@
-# 🎵 CladeAI
+# 🎵 Clade
 
-A music discovery app that helps you find songs based on **harmonic progressions** and connect with listeners who share your taste.
+**Find Your Harmony**
+
+A TikTok-style music discovery platform that helps you find songs based on **harmonic progressions**, not genre. Connect with listeners who share your taste through the universal language of chord progressions.
 
 ![React](https://img.shields.io/badge/React-18-blue?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
@@ -56,8 +58,8 @@ A music discovery app that helps you find songs based on **harmonic progressions
 
 ```bash
 # Clone the repository
-git clone https://github.com/repoisrael/cladeai.git
-cd harmony-hub
+git clone https://github.com/repoisrael/clade.git
+cd clade
 
 # Install dependencies
 bun install
@@ -178,8 +180,7 @@ bun run build
 
 1. Make sure your `package.json` includes:
 
-  "homepage": "https://repoisrael.github.io/cladeai",
-  "homepage": "https://repoisrael.github.io/harmony-hub",
+  "homepage": "https://repoisrael.github.io/clade",
   "scripts": {
     "predeploy": "bun run build",
     "deploy": "gh-pages -d dist"
@@ -200,7 +201,7 @@ bun run build
   # or: npm run deploy
   ```
 
-Your site will be live at https://repoisrael.github.io/harmony-hub
+Your site will be live at https://repoisrael.github.io/clade
 
 ## 🤝 Contributing
 

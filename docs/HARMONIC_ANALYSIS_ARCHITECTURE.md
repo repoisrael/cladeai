@@ -2,7 +2,7 @@
 
 ## Overview
 
-CladeAI uses a **hybrid harmonic analysis pipeline** that prioritizes cost-efficiency and user experience. The system analyzes songs by their relative harmonic structure (Roman numerals), not absolute chords or genre metadata.
+Clade uses a **hybrid harmonic analysis pipeline** that prioritizes cost-efficiency and user experience. The system analyzes songs by their relative harmonic structure (Roman numerals), not absolute chords or genre metadata.
 
 ## Core Principles
 
@@ -380,4 +380,4 @@ src/
 
 **Last Updated**: January 2026  
 **Model Version**: 1.0.0 (placeholder)  
-**Author**: CladeAI Engineering Team
+**Author**: Clade Engineering Team

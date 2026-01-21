@@ -8,8 +8,8 @@
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/repoisrael/cladeai.git
-   cd cladeai
+   git clone https://github.com/repoisrael/clade.git
+   cd clade
    ```
 2. Install dependencies:
    ```bash
@@ -27,7 +27,7 @@
    - Get Spotify keys from your Spotify Developer Dashboard.
    - For production:
      ```
-     VITE_SPOTIFY_REDIRECT_URI=https://repoisrael.github.io/cladeai/spotify-callback
+     VITE_SPOTIFY_REDIRECT_URI=https://repoisrael.github.io/clade/spotify-callback
      ```
    - For local development:
      ```

@@ -1,4 +1,4 @@
-# 🎯 CladeAI - Task List & Progress
+# 🎯 Clade - Task List & Progress
 
 **Last Updated**: January 21, 2026
 
@@ -176,7 +176,7 @@
 
 ### Minor
 - [ ] HTML title still says "TODO" (index.html line 6)
-  - Update to "CladeAI - Discover Music by Harmony"
+  - Update to "Clade - Find Your Harmony"
   
 - [ ] Spotify embed doesn't support timestamp seek
   - YouTube supports seekTo, Spotify restarts

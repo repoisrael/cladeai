@@ -7,7 +7,7 @@
 ## 2. Connect Spotify
 - Go to your profile/settings.
 - Click "Connect Spotify" and authorize the app.
-- You’ll be redirected back to CladeAI.
+- You'll be redirected back to Clade.
 
 ## 3. Discover Music
 - Use the search bar to find songs by chord progression.

@@ -1,10 +1,12 @@
 ---
-title: Welcome to CladeAI
+title: Welcome to Clade
 ---
 
-# 🎵 CladeAI Documentation
+# 🎵 Clade Documentation
 
-CladeAI is a TikTok-style music discovery platform that analyzes songs by **harmonic structure**, not genre. Find tracks using chord progressions, cadence patterns, and relative theory.
+**Find Your Harmony**
+
+Clade is a TikTok-style music discovery platform that analyzes songs by **harmonic structure**, not genre. Find tracks using chord progressions, cadence patterns, and relative theory.
 
 ## 📚 Documentation
 
@@ -48,4 +50,4 @@ Tracks matched by: Progression shape (50%), Cadence (20%), Loop length (15%), Mo
 
 ---
 
-If you have questions or need help, open an issue on [GitHub](https://github.com/repoisrael/cladeai) or reach out to the maintainer.
+If you have questions or need help, open an issue on [GitHub](https://github.com/repoisrael/clade) or reach out to the maintainer.

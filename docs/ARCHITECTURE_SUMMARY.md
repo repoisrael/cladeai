@@ -1,4 +1,4 @@
-# CladeAI Architecture Summary
+# Clade Architecture Summary
 
 **Last Updated**: January 21, 2026
 

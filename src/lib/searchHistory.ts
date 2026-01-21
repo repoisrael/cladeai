@@ -6,7 +6,7 @@
 
 import { Track } from '@/types';
 
-const HISTORY_KEY = 'cladeai_search_history';
+const HISTORY_KEY = 'clade_search_history';
 const MAX_HISTORY_ITEMS = 20;
 
 export interface SearchHistoryItem {

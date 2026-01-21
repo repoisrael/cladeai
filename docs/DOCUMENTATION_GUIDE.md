@@ -1,6 +1,6 @@
 # Documentation Structure
 
-This document outlines the organization of CladeAI's documentation.
+This document outlines the organization of Clade's documentation.
 
 ## 📁 Documentation Files
 
@@ -160,7 +160,7 @@ More content
 ### Links
 - Use relative links: `[features](features.md)`
 - Link to code: `[src/types/harmony.ts](../src/types/harmony.ts)`
-- Link to GitHub issues: `[#123](https://github.com/repoisrael/cladeai/issues/123)`
+- Link to GitHub issues: `[#123](https://github.com/repoisrael/clade/issues/123)`
 
 ## 🎯 Documentation Goals
 
@@ -199,5 +199,5 @@ More content
 
 ---
 
-**Maintained by**: CladeAI Engineering Team  
+**Maintained by**: Clade Engineering Team  
 **Last Updated**: January 21, 2026
