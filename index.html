@@ -17,6 +17,20 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@repoisrael" />
     <meta name="twitter:image" content="https://raw.githubusercontent.com/repoisrael/cladeai/main/public/og-image.png" />
+    
+    <!-- Single Page Apps for GitHub Pages -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          const decoded = l.search.slice(1).split('&').map(s => 
+            s.replace(/~and~/g, '&')
+          ).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
   </head>
 
   <body>
