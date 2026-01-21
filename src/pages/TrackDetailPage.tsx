@@ -395,6 +395,30 @@ export default function TrackDetailPage() {
           </motion.div>
         )}
 
+        {/* Embedded Spotify Player */}
+        {track.spotify_id && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="w-full max-w-2xl mx-auto"
+          >
+            <div className="rounded-lg overflow-hidden shadow-xl">
+              <iframe
+                style={{ borderRadius: '12px' }}
+                src={`https://open.spotify.com/embed/track/${track.spotify_id}?utm_source=generator&theme=0`}
+                width="100%"
+                height="352"
+                frameBorder="0"
+                allowFullScreen={false}
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                className="w-full"
+              />
+            </div>
+          </motion.div>
+        )}
+
         {/* Tabs */}
         <Tabs defaultValue="sections" className="w-full">
           <TabsList className="w-full grid grid-cols-4">
