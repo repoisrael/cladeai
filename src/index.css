@@ -209,6 +209,10 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
+
+  .animate-pulse-subtle {
+    animation: pulseSubtle 3s ease-in-out infinite;
+  }
 }
 
 @keyframes slideInUp {
@@ -237,6 +241,17 @@
   }
   100% {
     background-position: 200% 0;
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
   }
 }
 
