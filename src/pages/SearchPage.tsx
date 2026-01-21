@@ -271,11 +271,11 @@ export default function SearchPage() {
         )}
 
         {/* No results */}
-        {query && results.length === 0 && (
+        {query && spotifyResults.length === 0 && results.length === 0 && !isSearching && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No results found for "{query}"</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Try a different search term
+              {!isSpotifyConnected && user ? 'Connect Spotify for full catalog access' : 'Try a different search term'}
             </p>
           </div>
         )}
