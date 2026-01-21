@@ -250,6 +250,8 @@ export function TrackCard({
               urlSpotifyApp: track.url_spotify_app || undefined,
               urlYoutube: track.url_youtube || undefined,
             }}
+            trackTitle={track.title}
+            trackArtist={track.artist}
             size="md"
           />
         </motion.div>

@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion';
 import { Music } from 'lucide-react';
-import { TrackProviderInfo, getProviderLinks, openProviderLink } from '@/lib/providers';
+import { TrackProviderInfo, getProviderLinks } from '@/lib/providers';
 import { getPreferredProvider, setPreferredProvider } from '@/lib/preferences';
+import { useFloatingPlayers } from '@/contexts/FloatingPlayersContext';
 import { cn } from '@/lib/utils';
 
 interface QuickStreamButtonsProps {
   track: TrackProviderInfo;
+  trackTitle?: string;
+  trackArtist?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -35,6 +38,8 @@ const YouTubeIcon = ({ className }: { className?: string }) => (
  */
 export function QuickStreamButtons({
   track,
+  trackTitle = 'Track',
+  trackArtist,
   className,
   size = 'md',
 }: QuickStreamButtonsProps) {
@@ -42,13 +47,19 @@ export function QuickStreamButtons({
   const spotifyLink = links.find(l => l.provider === 'spotify');
   const youtubeLink = links.find(l => l.provider === 'youtube');
   const preferredProvider = getPreferredProvider();
+  const { playSpotify, playYouTube } = useFloatingPlayers();
 
-  const handleClick = (link: typeof spotifyLink, provider: 'spotify' | 'youtube') => {
-    if (link) {
-      // Remember this as the preferred provider
-      setPreferredProvider(provider);
-      // Always open web player (preferApp = false)
-      openProviderLink(link, false);
+  const handleSpotifyClick = () => {
+    if (track.spotifyId) {
+      setPreferredProvider('spotify');
+      playSpotify(track.spotifyId, trackTitle, trackArtist);
+    }
+  };
+
+  const handleYouTubeClick = () => {
+    if (track.youtubeId) {
+      setPreferredProvider('youtube');
+      playYouTube(track.youtubeId, trackTitle, trackArtist);
     }
   };
 
@@ -80,14 +91,14 @@ export function QuickStreamButtons({
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => handleClick(spotifyLink, 'spotify')}
+          onClick={handleSpotifyClick}
           className={cn(
             sizeClasses[size],
             'rounded-full flex items-center justify-center transition-all',
             'bg-[#1DB954] hover:bg-[#1ed760] text-white shadow-lg',
             preferredProvider === 'spotify' && 'ring-2 ring-white ring-offset-2 ring-offset-background'
           )}
-          title="Open in Spotify"
+          title="Play in Spotify"
         >
           <SpotifyIcon className={iconSizes[size]} />
         </motion.button>
@@ -98,14 +109,14 @@ export function QuickStreamButtons({
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => handleClick(youtubeLink, 'youtube')}
+          onClick={handleYouTubeClick}
           className={cn(
             sizeClasses[size],
             'rounded-full flex items-center justify-center transition-all',
             'bg-[#FF0000] hover:bg-[#cc0000] text-white shadow-lg',
             preferredProvider === 'youtube' && 'ring-2 ring-white ring-offset-2 ring-offset-background'
           )}
-          title="Open on YouTube"
+          title="Play on YouTube"
         >
           <YouTubeIcon className={iconSizes[size]} />
         </motion.button>

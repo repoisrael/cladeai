@@ -1,0 +1,88 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Minimize2, Maximize2 } from 'lucide-react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
+interface FloatingPlayerProps {
+  type: 'spotify' | 'youtube';
+  trackId: string;
+  title: string;
+  artist?: string;
+  onClose: () => void;
+}
+
+export function FloatingPlayer({ type, trackId, title, artist, onClose }: FloatingPlayerProps) {
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  const embedUrl = type === 'spotify'
+    ? `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`
+    : `https://www.youtube.com/embed/${trackId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8, x: 100 }}
+        animate={{ 
+          opacity: 1, 
+          scale: 1, 
+          x: 0,
+          height: isMinimized ? '60px' : type === 'spotify' ? '352px' : '240px'
+        }}
+        exit={{ opacity: 0, scale: 0.8, x: 100 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className={cn(
+          'rounded-xl shadow-2xl overflow-hidden',
+          'glass-strong border border-border/50',
+          isMinimized ? 'w-72' : type === 'spotify' ? 'w-80' : 'w-96'
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 bg-background/80 backdrop-blur-sm border-b border-border/50">
+          <div className="flex-1 min-w-0 pr-2">
+            <p className="text-sm font-medium truncate">{title}</p>
+            {artist && <p className="text-xs text-muted-foreground truncate">{artist}</p>}
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+              title={isMinimized ? 'Expand' : 'Minimize'}
+            >
+              {isMinimized ? (
+                <Maximize2 className="w-4 h-4" />
+              ) : (
+                <Minimize2 className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-lg transition-colors"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Player iframe */}
+        {!isMinimized && (
+          <div className={cn(
+            'w-full',
+            type === 'spotify' ? 'h-[304px]' : 'h-[192px]'
+          )}>
+            <iframe
+              src={embedUrl}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              className="w-full h-full"
+              style={{ borderRadius: '0' }}
+            />
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
