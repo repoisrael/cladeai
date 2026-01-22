@@ -19,21 +19,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
+    // Restore session from storage (fixes repeated login prompts)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Store last auth timestamp to detect stale sessions
+      if (session) {
+        localStorage.setItem('lastAuthTime', Date.now().toString());
+      }
     });
+
+    // Set up auth state listener for session changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth event:', event);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        // Handle different auth events
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          localStorage.setItem('lastAuthTime', Date.now().toString());
+        } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('lastAuthTime');
+        }
+        
+        // Auto-refresh token 5 minutes before expiration
+        if (event === 'SIGNED_IN' && session) {
+          const expiresAt = session.expires_at;
+          if (expiresAt) {
+            const expiresInMs = (expiresAt * 1000) - Date.now();
+            const refreshTime = expiresInMs - (5 * 60 * 1000); // 5 min before expiry
+            
+            if (refreshTime > 0) {
+              setTimeout(async () => {
+                const { error } = await supabase.auth.refreshSession();
+                if (error) {
+                  console.error('Token refresh failed:', error);
+                }
+              }, refreshTime);
+            }
+          }
+        }
+      }
+    );
+
+    // Check for stale sessions on mount (older than 1 hour = refresh)
+    const lastAuthTime = localStorage.getItem('lastAuthTime');
+    if (lastAuthTime) {
+      const timeSinceAuth = Date.now() - parseInt(lastAuthTime);
+      const oneHour = 60 * 60 * 1000;
+      
+      if (timeSinceAuth > oneHour) {
+        supabase.auth.refreshSession().catch(console.error);
+      }
+    }
 
     return () => subscription.unsubscribe();
   }, []);
