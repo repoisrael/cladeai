@@ -48,23 +48,25 @@ export function QuickStreamButtons({
   const spotifyLink = links.find(l => l.provider === 'spotify');
   const youtubeLink = links.find(l => l.provider === 'youtube');
   const preferredProvider = getPreferredProvider();
-  const { playSpotify, playYouTube } = useFloatingPlayers();
+  const { playSpotify, playYouTube, setActivePlayer } = useFloatingPlayers();
 
   const handleSpotifyClick = useCallback(() => {
     if (track.spotifyId) {
       setPreferredProvider('spotify');
       playSpotify(track.spotifyId, trackTitle, trackArtist);
-      // Don't close YouTube - allow both to be open
+      // This will minimize YouTube if it's open
+      setActivePlayer('spotify');
     }
-  }, [track.spotifyId, trackTitle, trackArtist, playSpotify]);
+  }, [track.spotifyId, trackTitle, trackArtist, playSpotify, setActivePlayer]);
 
   const handleYouTubeClick = useCallback(() => {
     if (track.youtubeId) {
       setPreferredProvider('youtube');
       playYouTube(track.youtubeId, trackTitle, trackArtist);
-      // Don't close Spotify - allow both to be open
+      // This will minimize Spotify if it's open
+      setActivePlayer('youtube');
     }
-  }, [track.youtubeId, trackTitle, trackArtist, playYouTube]);
+  }, [track.youtubeId, trackTitle, trackArtist, playYouTube, setActivePlayer]);
 
   const sizeClasses = {
     sm: 'w-8 h-8',
