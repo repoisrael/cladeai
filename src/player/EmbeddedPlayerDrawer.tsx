@@ -43,17 +43,18 @@ export function EmbeddedPlayerDrawer() {
 
   if (!isOpen || !meta) return null;
 
-  if (!isOpen || !meta) return null;
-
   return (
     <>
       {/* Single Interchangeable Player */}
       <motion.div
+        drag={isMinimized ? "y" : false}
+        dragConstraints={{ top: 0, bottom: 200 }}
+        dragElastic={0.1}
         initial={{ y: 48, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 48, opacity: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="pointer-events-auto fixed top-4 md:bottom-0 right-4 z-[100] md:pb-20 pt-safe md:pt-0 w-[90vw] max-w-[320px] md:w-[320px]"
+        className="pointer-events-auto fixed top-20 md:top-auto md:bottom-0 right-2 md:right-4 z-[100] md:pb-20 pt-safe md:pt-0 w-[calc(100vw-80px)] max-w-[320px] md:w-[320px]">
       >
         <div className={`overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br ${meta.color} shadow-2xl backdrop-blur-xl`}>
           {/* Header - Always visible, compact on mobile */}
@@ -77,10 +78,10 @@ export function EmbeddedPlayerDrawer() {
               <button
                 type="button"
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
                 aria-label={isMinimized ? 'Expand player' : 'Minimize player'}
               >
-                {isMinimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {isMinimized ? <ChevronUp className="h-3 w-3 md:h-4 md:w-4" /> : <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />}
               </button>
               <button
                 type="button"
