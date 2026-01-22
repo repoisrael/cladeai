@@ -51,16 +51,15 @@ export function FloatingPlayer({ type, trackId, title, artist, onClose, seekTime
         animate={{ 
           opacity: 1, 
           scale: 1, 
-          x: 0,
-          height: isMinimized ? '60px' : type === 'spotify' ? '352px' : '240px'
+          x: 0
         }}
         exit={{ opacity: 0, scale: 0.8, x: 100 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         className={cn(
-          'rounded-xl shadow-2xl overflow-hidden',
+          'rounded-xl shadow-2xl overflow-hidden w-full md:w-auto',
           'glass-strong border transition-all',
           isActive ? 'border-primary/80 ring-2 ring-primary/30' : 'border-border/50',
-          isMinimized ? 'w-72' : type === 'spotify' ? 'w-80' : 'w-96'
+          isMinimized ? 'w-72' : type === 'spotify' ? 'md:w-80' : 'md:w-96'
         )}
       >
         {/* Header */}
@@ -95,7 +94,7 @@ export function FloatingPlayer({ type, trackId, title, artist, onClose, seekTime
         {!isMinimized && (
           <div className={cn(
             'w-full',
-            type === 'spotify' ? 'h-[304px]' : 'h-[192px]'
+            type === 'spotify' ? 'h-48 md:h-[304px]' : 'h-40 md:h-[192px]'
           )}>
             <iframe
               ref={iframeRef}

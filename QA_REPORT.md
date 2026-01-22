@@ -11,7 +11,7 @@ Completed full QA audit and fixes for:
 ## Mobile Player Fixes
 
 ### Issues Identified
-1. ❌ Duplicate `return null` statement (lines 43-44)
+1. ❌ Duplicannte `return null` statement (lines 43-44)
 2. ❌ Player overlapped with TikTok buttons on mobile
 3. ❌ Minimize button hidden on mobile
 4. ❌ Player not draggable when minimized
