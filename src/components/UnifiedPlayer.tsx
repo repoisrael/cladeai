@@ -31,21 +31,31 @@ export function UnifiedPlayer({
   autoplay = false,
   className,
 }: UnifiedPlayerProps) {
-  const { openSpotify, openYoutube } = usePlayer();
+  const { openPlayer } = usePlayer();
   const [activePlayer, setActivePlayer] = useState<'spotify' | 'youtube' | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleSpotifyClick = () => {
     if (spotifyId) {
       setActivePlayer('spotify');
-      openSpotify(spotifyId, autoplay);
+      openPlayer({
+        canonicalTrackId: trackId,
+        provider: 'spotify',
+        providerTrackId: spotifyId,
+        autoplay,
+      });
     }
   };
 
   const handleYoutubeClick = () => {
     if (youtubeId) {
       setActivePlayer('youtube');
-      openYoutube(youtubeId, autoplay);
+      openPlayer({
+        canonicalTrackId: trackId,
+        provider: 'youtube',
+        providerTrackId: youtubeId,
+        autoplay,
+      });
     }
   };
 
