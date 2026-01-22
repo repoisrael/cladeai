@@ -8,11 +8,13 @@ export interface ConnectedProviders {
 }
 
 export interface PlayerState {
-  open: boolean;
+  spotifyOpen: boolean;
+  youtubeOpen: boolean;
   canonicalTrackId: string | null;
-  provider: MusicProvider;
-  providerTrackId: string | null;
-  autoplay: boolean;
+  spotifyTrackId: string | null;
+  youtubeTrackId: string | null;
+  autoplaySpotify: boolean;
+  autoplayYoutube: boolean;
   /** Start time in seconds for seeking (e.g., section navigation) */
   seekToSec: number | null;
   /** Currently active section ID */
@@ -33,7 +35,8 @@ type OpenPlayerPayload = {
 
 interface PlayerContextValue extends PlayerState {
   openPlayer: (payload: OpenPlayerPayload) => void;
-  closePlayer: () => void;
+  closeSpotify: () => void;
+  closeYoutube: () => void;
   switchProvider: (provider: MusicProvider, providerTrackId: string | null, canonicalTrackId?: string | null) => void;
   /** Seek to a specific time (seconds). Used for section navigation. */
   seekTo: (sec: number) => void;
@@ -49,11 +52,13 @@ const PlayerContext = createContext<PlayerContextValue | null>(null);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PlayerState>({
-    open: false,
+    spotifyOpen: false,
+    youtubeOpen: false,
     canonicalTrackId: null,
-    provider: 'youtube',
-    providerTrackId: null,
-    autoplay: false,
+    spotifyTrackId: null,
+    youtubeTrackId: null,
+    autoplaySpotify: false,
+    autoplayYoutube: false,
     seekToSec: null,
     currentSectionId: null,
     isPlaying: false,
@@ -82,15 +87,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentSection,
     setIsPlaying,
     openPlayer: (payload) => {
-      setState((prev) => ({
-        ...prev,
-        open: true,
-        canonicalTrackId: payload.canonicalTrackId ?? prev.canonicalTrackId,
-        provider: payload.provider,
-        providerTrackId: payload.providerTrackId,
-        autoplay: payload.autoplay ?? true,
-        seekToSec: payload.startSec ?? null,
-      }));
+      setState((prev) => {
+        const updates: Partial<PlayerState> = {
+          canonicalTrackId: payload.canonicalTrackId ?? prev.canonicalTrackId,
+          seekToSec: payload.startSec ?? null,
+        };
+
+        if (payload.provider === 'spotify') {
+          updates.spotifyOpen = true;
+          updates.spotifyTrackId = payload.providerTrackId;
+          updates.autoplaySpotify = payload.autoplay ?? true;
+        } else {
+          updates.youtubeOpen = true;
+          updates.youtubeTrackId = payload.providerTrackId;
+          updates.autoplayYoutube = payload.autoplay ?? true;
+        }
+
+        return { ...prev, ...updates };
+      });
 
       if (payload.canonicalTrackId) {
         recordPlayEvent({
@@ -103,17 +117,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    closePlayer: () => setState((prev) => ({ ...prev, open: false, autoplay: false, seekToSec: null })),
+    closeSpotify: () => setState((prev) => ({ ...prev, spotifyOpen: false, autoplaySpotify: false })),
+    closeYoutube: () => setState((prev) => ({ ...prev, youtubeOpen: false, autoplayYoutube: false })),
     switchProvider: (provider, providerTrackId, canonicalTrackId) => {
-      setState((prev) => ({
-        ...prev,
-        provider,
-        providerTrackId,
-        canonicalTrackId: canonicalTrackId ?? prev.canonicalTrackId,
-        open: true,
-        autoplay: true,
-        seekToSec: null,
-      }));
+      setState((prev) => {
+        const updates: Partial<PlayerState> = {
+          canonicalTrackId: canonicalTrackId ?? prev.canonicalTrackId,
+          seekToSec: null,
+        };
+
+        if (provider === 'spotify') {
+          updates.spotifyOpen = true;
+          updates.spotifyTrackId = providerTrackId;
+          updates.autoplaySpotify = true;
+        } else {
+          updates.youtubeOpen = true;
+          updates.youtubeTrackId = providerTrackId;
+          updates.autoplayYoutube = true;
+        }
+
+        return { ...prev, ...updates };
+      });
 
       const trackIdToLog = canonicalTrackId ?? state.canonicalTrackId;
       if (trackIdToLog) {
