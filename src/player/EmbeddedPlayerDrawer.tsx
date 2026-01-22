@@ -9,12 +9,28 @@ const providerMeta = {
 } as const;
 
 export function EmbeddedPlayerDrawer() {
-  const { open, provider, providerTrackId, autoplay, closePlayer, trackTitle } = usePlayer();
+  const {
+    spotifyOpen,
+    youtubeOpen,
+    spotifyTrackId,
+    youtubeTrackId,
+    autoplaySpotify,
+    autoplayYoutube,
+    closeSpotify,
+    closeYoutube,
+  } = usePlayer();
+
+  // Determine which player is active
+  const provider = spotifyOpen ? 'spotify' : youtubeOpen ? 'youtube' : null;
+  const providerTrackId = spotifyOpen ? spotifyTrackId : youtubeOpen ? youtubeTrackId : null;
+  const autoplay = spotifyOpen ? autoplaySpotify : youtubeOpen ? autoplayYoutube : false;
+  const closePlayer = spotifyOpen ? closeSpotify : closeYoutube;
+
   const meta = useMemo(() => {
     return provider ? providerMeta[provider as keyof typeof providerMeta] ?? { label: 'Now Playing', badge: '♪', color: 'bg-neutral-900/80' } : { label: 'Now Playing', badge: '♪', color: 'bg-neutral-900/80' };
   }, [provider]);
 
-  if (!open || !provider || !providerTrackId) return null;
+  if (!provider || !providerTrackId) return null;
 
   // Slim, clickable, always on top, 12:1 aspect ratio, shows title
   return (
@@ -26,7 +42,7 @@ export function EmbeddedPlayerDrawer() {
     >
       <div className="flex flex-row items-center w-full max-w-lg mx-auto px-2 gap-2">
         <span className="text-xl select-none" aria-label={meta.label}>{meta.badge}</span>
-        <span className="flex-1 truncate text-sm font-semibold text-white" title={trackTitle || 'Now Playing'}>{trackTitle || 'Now Playing'}</span>
+        <span className="flex-1 truncate text-sm font-semibold text-white" title="Now Playing">Now Playing</span>
         <button
           type="button"
           onClick={closePlayer}
