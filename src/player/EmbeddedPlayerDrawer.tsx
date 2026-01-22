@@ -123,7 +123,7 @@ export function EmbeddedPlayerDrawer() {
   };
 
   return (
-    <div className="pointer-events-none fixed bottom-0 right-4 z-50 pb-20 flex gap-3 items-end">
+    <div className="pointer-events-none fixed top-4 md:bottom-0 right-4 z-50 md:pb-20 pt-safe md:pt-0 flex gap-3 items-start md:items-end">
       <AnimatePresence>
         {renderPlayer('youtube', youtubeMinimized, setYoutubeMinimized, closeYoutube, youtubeTrackId, autoplayYoutube, youtubeOpen)}
       </AnimatePresence>
