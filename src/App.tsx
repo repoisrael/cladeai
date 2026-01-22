@@ -29,6 +29,7 @@ const PlaylistsPage = lazy(() => import("./pages/PlaylistsPage"));
 const PlaylistDetailPage = lazy(() => import("./pages/PlaylistDetailPage"));
 const ForumHomePage = lazy(() => import("./pages/ForumHomePage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminPerformanceDashboard = lazy(() => import("./components/AdminPerformanceDashboard"));
 const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const MusicTasteSurvey = lazy(() => import("./components/MusicTasteSurvey"));
@@ -80,6 +81,7 @@ const App = () => (
                     {/* Admin Routes - Protected */}
                     <Route element={<AdminRoute />}>
                       <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/admin/performance" element={<AdminPerformanceDashboard />} />
                     </Route>
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
