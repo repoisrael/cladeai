@@ -100,8 +100,11 @@ export default function PlaylistsPage() {
     >
       <div className="space-y-6">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner />
+          <div className="flex flex-col items-center justify-center py-20">
+            <LoadingSpinner size="lg" />
+            <p className="text-sm text-muted-foreground mt-4">
+              {showPublic ? 'Loading public playlists...' : 'Loading your playlists...'}
+            </p>
           </div>
         ) : playlists && playlists.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
@@ -175,21 +178,23 @@ export default function PlaylistsPage() {
             ))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Music className="w-16 h-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                {showPublic ? 'No public playlists yet' : 'No playlists yet'}
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="rounded-full bg-muted p-6 mb-4">
+                <Music className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">
+                {showPublic ? 'No public playlists found' : 'No playlists yet'}
               </h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
                 {showPublic
-                  ? 'Check back later for community playlists'
-                  : 'Create your first playlist to organize your favorite tracks'}
+                  ? 'Be the first to share a public playlist with the community'
+                  : 'Create your first playlist to organize your favorite tracks by mood, genre, or theme'}
               </p>
               {!showPublic && (
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Playlist
+                <Button onClick={() => setCreateDialogOpen(true)} size="lg">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create Your First Playlist
                 </Button>
               )}
             </CardContent>

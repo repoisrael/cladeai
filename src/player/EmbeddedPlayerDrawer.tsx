@@ -97,12 +97,12 @@ export function EmbeddedPlayerDrawer() {
   };
 
   return (
-    <div className="pointer-events-none fixed bottom-0 right-0 z-50 p-4 pb-6 flex gap-3 items-end">
-      <AnimatePresence>
-        {renderPlayer('spotify', spotifyMinimized, setSpotifyMinimized, closeSpotify, spotifyTrackId, autoplaySpotify, spotifyOpen)}
-      </AnimatePresence>
+    <div className="pointer-events-none fixed bottom-0 right-4 z-50 pb-20 flex gap-3 items-end">
       <AnimatePresence>
         {renderPlayer('youtube', youtubeMinimized, setYoutubeMinimized, closeYoutube, youtubeTrackId, autoplayYoutube, youtubeOpen)}
+      </AnimatePresence>
+      <AnimatePresence>
+        {renderPlayer('spotify', spotifyMinimized, setSpotifyMinimized, closeSpotify, spotifyTrackId, autoplaySpotify, spotifyOpen)}
       </AnimatePresence>
     </div>
   );

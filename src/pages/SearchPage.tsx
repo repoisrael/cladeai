@@ -65,14 +65,29 @@ export default function SearchPage() {
     if (!query.trim()) return [];
 
     if (searchMode === 'song') {
-      // Search by song/artist
+      // Search by song/artist/album
       const lowerQuery = query.toLowerCase();
-      return seedTracks.filter(
+      const filtered = seedTracks.filter(
         (t) =>
           t.title?.toLowerCase().includes(lowerQuery) ||
           t.artist?.toLowerCase().includes(lowerQuery) ||
           t.album?.toLowerCase().includes(lowerQuery)
       );
+      
+      // Sort by relevance: exact title match first, then artist, then album
+      return filtered.sort((a, b) => {
+        const aTitle = a.title?.toLowerCase() || '';
+        const bTitle = b.title?.toLowerCase() || '';
+        const aArtist = a.artist?.toLowerCase() || '';
+        const bArtist = b.artist?.toLowerCase() || '';
+        
+        if (aTitle.startsWith(lowerQuery) && !bTitle.startsWith(lowerQuery)) return -1;
+        if (!aTitle.startsWith(lowerQuery) && bTitle.startsWith(lowerQuery)) return 1;
+        if (aArtist.startsWith(lowerQuery) && !bArtist.startsWith(lowerQuery)) return -1;
+        if (!aArtist.startsWith(lowerQuery) && bArtist.startsWith(lowerQuery)) return 1;
+        
+        return 0;
+      });
     } else {
       // Search by chord progression
       const chords = query
@@ -269,28 +284,32 @@ export default function SearchPage() {
         {/* No results message */}
         {query && spotifyResults.length === 0 && results.length === 0 && !isSearching && (
           <section>
-            <div className="glass rounded-xl p-6 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
-                <Search className="w-8 h-8 text-muted-foreground" />
+            <div className="glass rounded-2xl p-8 text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <Search className="w-10 h-10 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2">No results found for "{query}"</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Local database has only {seedTracks.length} tracks with chord progressions.
+                <h3 className="text-xl font-semibold mb-2">No results for "{query}"</h3>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Searched {seedTracks.length} tracks with chord progressions
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Try searching for artist names like "weeknd" or chord progressions like "vi-IV-I-V"
                 </p>
               </div>
               {!isSpotifyConnected && (
-                <div className="glass-strong rounded-lg p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-[#1DB954]">
+                <div className="glass-strong rounded-xl p-6 space-y-3 mt-6">
+                  <div className="flex items-center justify-center gap-2 text-[#1DB954]">
                     <ExternalLink className="w-5 h-5" />
-                    <span className="font-semibold">Connect Spotify for unlimited search</span>
+                    <span className="font-semibold">Unlock unlimited search</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Access millions of songs by connecting your Spotify account
+                  <p className="text-sm text-muted-foreground">
+                    Connect Spotify to search millions of songs beyond the local database
                   </p>
                   <Button
                     onClick={() => navigate('/profile')}
                     className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-white"
+                    size="lg"
                   >
                     Connect Spotify
                   </Button>

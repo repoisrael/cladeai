@@ -21,6 +21,10 @@ export interface PlayerState {
   currentSectionId: string | null;
   /** Whether playback is active */
   isPlaying: boolean;
+  /** Queue of tracks */
+  queue: import('@/types').Track[];
+  /** Current index in queue */
+  queueIndex: number;
 }
 
 type OpenPlayerPayload = {
@@ -46,6 +50,22 @@ interface PlayerContextValue extends PlayerState {
   setCurrentSection: (sectionId: string | null) => void;
   /** Set playback state */
   setIsPlaying: (playing: boolean) => void;
+  /** Add track to queue */
+  addToQueue: (track: import('@/types').Track) => void;
+  /** Play track from queue at index */
+  playFromQueue: (index: number) => void;
+  /** Remove track from queue */
+  removeFromQueue: (index: number) => void;
+  /** Reorder queue */
+  reorderQueue: (newQueue: import('@/types').Track[]) => void;
+  /** Clear queue */
+  clearQueue: () => void;
+  /** Shuffle queue */
+  shuffleQueue: () => void;
+  /** Go to next track in queue */
+  nextTrack: () => void;
+  /** Go to previous track in queue */
+  previousTrack: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -62,6 +82,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     seekToSec: null,
     currentSectionId: null,
     isPlaying: false,
+    queue: [],
+    queueIndex: -1,
   });
 
   const seekTo = useCallback((sec: number) => {
@@ -80,12 +102,121 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, isPlaying: playing }));
   }, []);
 
+  const addToQueue = useCallback((track: import('@/types').Track) => {
+    setState((prev) => ({ ...prev, queue: [...prev.queue, track] }));
+  }, []);
+
+  const playFromQueue = useCallback((index: number) => {
+    setState((prev) => {
+      const track = prev.queue[index];
+      if (!track) return prev;
+
+      const provider = getPreferredProvider();
+      const providerTrackId = provider === 'spotify' ? track.spotify_id : track.youtube_id;
+
+      return {
+        ...prev,
+        queueIndex: index,
+        canonicalTrackId: track.id,
+        spotifyOpen: provider === 'spotify',
+        youtubeOpen: provider === 'youtube',
+        spotifyTrackId: provider === 'spotify' ? providerTrackId : null,
+        youtubeTrackId: provider === 'youtube' ? providerTrackId : null,
+        autoplaySpotify: provider === 'spotify',
+        autoplayYoutube: provider === 'youtube',
+      };
+    });
+  }, []);
+
+  const removeFromQueue = useCallback((index: number) => {
+    setState((prev) => {
+      const newQueue = prev.queue.filter((_, i) => i !== index);
+      const newIndex = index < prev.queueIndex ? prev.queueIndex - 1 : prev.queueIndex;
+      return { ...prev, queue: newQueue, queueIndex: newIndex };
+    });
+  }, []);
+
+  const reorderQueue = useCallback((newQueue: import('@/types').Track[]) => {
+    setState((prev) => ({ ...prev, queue: newQueue }));
+  }, []);
+
+  const clearQueue = useCallback(() => {
+    setState((prev) => ({ ...prev, queue: [], queueIndex: -1 }));
+  }, []);
+
+  const shuffleQueue = useCallback(() => {
+    setState((prev) => {
+      const currentTrack = prev.queue[prev.queueIndex];
+      const remainingTracks = prev.queue.slice(prev.queueIndex + 1);
+      const shuffled = [...remainingTracks].sort(() => Math.random() - 0.5);
+      const newQueue = [
+        ...prev.queue.slice(0, prev.queueIndex + 1),
+        ...shuffled
+      ];
+      return { ...prev, queue: newQueue };
+    });
+  }, []);
+
+  const nextTrack = useCallback(() => {
+    setState((prev) => {
+      if (prev.queueIndex >= prev.queue.length - 1) return prev;
+      
+      const nextIndex = prev.queueIndex + 1;
+      const track = prev.queue[nextIndex];
+      if (!track) return prev;
+
+      const provider = getPreferredProvider();
+      const providerTrackId = provider === 'spotify' ? track.spotify_id : track.youtube_id;
+
+      return {
+        ...prev,
+        queueIndex: nextIndex,
+        canonicalTrackId: track.id,
+        spotifyTrackId: provider === 'spotify' ? providerTrackId : null,
+        youtubeTrackId: provider === 'youtube' ? providerTrackId : null,
+        autoplaySpotify: provider === 'spotify',
+        autoplayYoutube: provider === 'youtube',
+      };
+    });
+  }, []);
+
+  const previousTrack = useCallback(() => {
+    setState((prev) => {
+      if (prev.queueIndex <= 0) return prev;
+      
+      const prevIndex = prev.queueIndex - 1;
+      const track = prev.queue[prevIndex];
+      if (!track) return prev;
+
+      const provider = getPreferredProvider();
+      const providerTrackId = provider === 'spotify' ? track.spotify_id : track.youtube_id;
+
+      return {
+        ...prev,
+        queueIndex: prevIndex,
+        canonicalTrackId: track.id,
+        spotifyTrackId: provider === 'spotify' ? providerTrackId : null,
+        youtubeTrackId: provider === 'youtube' ? providerTrackId : null,
+        autoplaySpotify: provider === 'spotify',
+        autoplayYoutube: provider === 'youtube',
+      };
+    });
+  }, []);
+
   const value = useMemo<PlayerContextValue>(() => ({
     ...state,
     seekTo,
     clearSeek,
     setCurrentSection,
     setIsPlaying,
+    addToQueue,
+    playFromQueue,
+    removeFromQueue,
+    reorderQueue,
+    clearQueue,
+    shuffleQueue,
+    nextTrack,
+    previousTrack,
     openPlayer: (payload) => {
       setState((prev) => {
         const updates: Partial<PlayerState> = {
@@ -151,7 +282,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-  }), [state, seekTo, clearSeek, setCurrentSection, setIsPlaying]);
+  }), [state, seekTo, clearSeek, setCurrentSection, setIsPlaying, addToQueue, playFromQueue, removeFromQueue, reorderQueue, clearQueue, shuffleQueue, nextTrack, previousTrack]);
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }

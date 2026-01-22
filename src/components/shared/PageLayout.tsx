@@ -39,7 +39,7 @@ export function PageLayout({
     ? 'fixed top-0 left-0 right-0' 
     : 'sticky top-0';
   
-  const containerWidth = fullWidth ? '' : 'max-w-lg mx-auto';
+  const containerWidth = fullWidth ? '' : 'max-w-7xl mx-auto';
   const mainPadding = fixedHeader ? 'pt-16 pb-24' : 'pb-24';
 
   return (
