@@ -838,27 +838,42 @@ export default function ProfilePage() {
               </TabsContent>
 
               <TabsContent value="recent" className="mt-4">
-                <ResponsiveGrid cols={{ sm: 1, md: 2, lg: 3 }} gap="sm">
-                {recentlyPlayed?.tracks?.map((track) => (
-                  <div key={track.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
-                      {track.cover_url ? (
-                        <img src={track.cover_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Music className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{track.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
-                    </div>
+                {!spotifyConnected ? (
+                  <div className="text-center py-12">
+                    <Music className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                    <p className="text-sm text-muted-foreground font-medium">Connect Spotify to see recent plays</p>
+                    <Button onClick={handleConnectSpotify} className="mt-4" size="sm">
+                      Connect Spotify
+                    </Button>
                   </div>
-                ))}
-                </ResponsiveGrid>
-                {(!recentlyPlayed?.tracks || recentlyPlayed.tracks.length === 0) && (
-                  <p className="text-sm text-muted-foreground text-center py-8">No recent plays. Start listening now!</p>
+                ) : recentlyPlayed?.tracks && recentlyPlayed.tracks.length > 0 ? (
+                  <ResponsiveGrid cols={{ sm: 1, md: 2, lg: 3 }} gap="sm">
+                  {recentlyPlayed.tracks.map((track) => (
+                    <div key={track.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
+                        {track.cover_url ? (
+                          <img src={track.cover_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Music className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{track.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                      </div>
+                    </div>
+                  ))}
+                  </ResponsiveGrid>
+                ) : (
+                  <div className="text-center py-12">
+                    <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                    <p className="text-sm text-muted-foreground font-medium">No recent plays yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Start listening on Spotify to see your recent tracks here
+                    </p>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
