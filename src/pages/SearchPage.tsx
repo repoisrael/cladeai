@@ -171,6 +171,11 @@ export default function SearchPage() {
               autoFocus
             />
           </div>
+
+          {/* DEBUG INFO */}
+          <div className="text-xs bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400 p-2 rounded">
+            🔍 Debug: {seedTracks.length} tracks | Query: "{query}" | Results: {results.length} local + {spotifyResults.length} spotify
+          </div>
           </div>
         </ResponsiveContainer>
       </header>
