@@ -57,19 +57,15 @@ export default function SearchPage() {
   const results = useMemo(() => {
     if (!query.trim()) return [];
 
-    console.log('Search triggered:', { query, searchMode, seedTracksCount: seedTracks.length });
-
     if (searchMode === 'song') {
       // Search by song/artist
       const lowerQuery = query.toLowerCase();
-      const filtered = seedTracks.filter(
+      return seedTracks.filter(
         (t) =>
-          t.title.toLowerCase().includes(lowerQuery) ||
+          t.title?.toLowerCase().includes(lowerQuery) ||
           t.artist?.toLowerCase().includes(lowerQuery) ||
           t.album?.toLowerCase().includes(lowerQuery)
       );
-      console.log('Song search results:', filtered.length);
-      return filtered;
     } else {
       // Search by chord progression
       const chords = query
@@ -78,15 +74,13 @@ export default function SearchPage() {
         .map((c) => c.trim())
         .filter(Boolean);
       
-      const filtered = seedTracks.filter((t) => {
+      return seedTracks.filter((t) => {
         if (!t.progression_roman) return false;
         const progression = t.progression_roman.map((c) => c.toUpperCase());
         return chords.every((chord) => 
           progression.includes(chord) || progression.includes(chord.toLowerCase())
         );
       });
-      console.log('Chord search results:', filtered.length, 'for chords:', chords);
-      return filtered;
     }
   }, [query, searchMode]);
 
