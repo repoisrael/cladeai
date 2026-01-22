@@ -1,13 +1,13 @@
-import { Home, Search, Music2, User, Users, ListMusic } from 'lucide-react';
+import { Home, Search, Music2, User, Users, ListMusic, MessageSquare } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Feed' },
-  { to: '/following', icon: Users, label: 'Following' },
-  { to: '/playlists', icon: ListMusic, label: 'Playlists' },
+  { to: '/forum', icon: MessageSquare, label: 'Forums' },
   { to: '/search', icon: Search, label: 'Search' },
+  { to: '/playlists', icon: ListMusic, label: 'Lists' },
   { to: '/profile', icon: User, label: 'Profile' },
 ];
 

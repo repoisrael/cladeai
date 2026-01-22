@@ -27,6 +27,7 @@ const ArtistPage = lazy(() => import("./pages/ArtistPage"));
 const TrackDetailPage = lazy(() => import("./pages/TrackDetailPage"));
 const PlaylistsPage = lazy(() => import("./pages/PlaylistsPage"));
 const PlaylistDetailPage = lazy(() => import("./pages/PlaylistDetailPage"));
+const ForumHomePage = lazy(() => import("./pages/ForumHomePage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -65,6 +66,9 @@ const App = () => (
                     <Route path="/track/:trackId" element={<TrackDetailPage />} />
                     <Route path="/playlists" element={<PlaylistsPage />} />
                     <Route path="/playlist/:playlistId" element={<PlaylistDetailPage />} />
+                    <Route path="/forum" element={<ForumHomePage />} />
+                    <Route path="/forum/:forumName" element={<ForumHomePage />} />
+                    <Route path="/forum/post/:postId" element={<ForumHomePage />} />
                     {/* Admin Routes - Protected */}
                     <Route element={<AdminRoute />}>
                       <Route path="/admin" element={<AdminDashboard />} />
