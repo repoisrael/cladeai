@@ -22,6 +22,15 @@ export function FloatingPlayer({
   seekTime,
   isActive,
 }: FloatingPlayerProps) {
+export function FloatingPlayer({
+  type,
+  trackId,
+  title,
+  artist,
+  onClose,
+  seekTime,
+  isActive,
+}: FloatingPlayerProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [currentTrackId, setCurrentTrackId] = useState(trackId);
 
@@ -81,6 +90,14 @@ export function FloatingPlayer({
         className={cn(
           'rounded-xl shadow-2xl overflow-hidden',
           'glass-strong border transition-all',
+          isActive
+            ? 'border-primary/80 ring-2 ring-primary/30'
+            : 'border-border/50',
+          isMinimized
+            ? 'w-72'
+            : type === 'spotify'
+            ? 'w-80'
+            : 'w-96'
           isActive
             ? 'border-primary/80 ring-2 ring-primary/30'
             : 'border-border/50',
