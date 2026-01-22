@@ -4,6 +4,7 @@ import { TrackCard } from '@/components/TrackCard';
 import { FeedSkeleton } from '@/components/FeedSkeleton';
 import { FeedSidebar } from '@/components/FeedSidebar';
 import { LiveChat } from '@/components/LiveChat';
+import { ScrollingComments } from '@/components/ScrollingComments';
 import { BottomNav } from '@/components/BottomNav';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { ResponsiveContainer, DesktopColumns } from '@/components/layout/ResponsiveLayout';
@@ -293,6 +294,11 @@ export default function FeedPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Scrolling comments overlay for current track */}
+      {tracks[currentIndex] && (
+        <ScrollingComments roomId="global" maxVisible={3} scrollSpeed={4000} />
+      )}
 
       {/* Bottom navigation */}
       <BottomNav />

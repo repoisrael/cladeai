@@ -20,6 +20,8 @@ import { ChordBadge } from '@/components/ChordBadge';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { TrackLineageView } from '@/components/TrackLineageView';
 import { TrackComments } from '@/components/TrackComments';
+import { TikTokStyleButtons } from '@/components/TikTokStyleButtons';
+import { ScrollingComments } from '@/components/ScrollingComments';
 import { getTrackSections } from '@/api/trackSections';
 import { searchYouTubeVideos, VideoResult } from '@/services/youtubeSearchService';
 import { TrackSection, Track } from '@/types';
@@ -721,6 +723,28 @@ export default function TrackDetailPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* TikTok-style side buttons (mobile only) */}
+      <TikTokStyleButtons
+        trackId={trackId || ''}
+        likes={Math.floor(Math.random() * 1000)}
+        onComment={() => {
+          // Scroll to comments tab
+          const commentsTab = document.querySelector('[value="comments"]');
+          commentsTab?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        onShare={() => {
+          if (navigator.share) {
+            navigator.share({
+              title: `${track.title} - ${track.artist}`,
+              url: window.location.href,
+            });
+          }
+        }}
+      />
+
+      {/* Scrolling comments overlay */}
+      <ScrollingComments trackId={trackId} maxVisible={3} scrollSpeed={4000} />
 
       <BottomNav />
     </div>
