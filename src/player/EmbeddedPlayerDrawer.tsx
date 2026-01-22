@@ -29,89 +29,85 @@ export function EmbeddedPlayerDrawer() {
     clearQueue,
     shuffleQueue,
   } = usePlayer();
-  const [spotifyMinimized, setSpotifyMinimized] = useState(false);
-  const [youtubeMinimized, setYoutubeMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
 
-  // Auto-minimize the other player when one opens/expands
-  useEffect(() => {
-    if (spotifyOpen && !spotifyMinimized) {
-      setYoutubeMinimized(true);
-    }
-  }, [spotifyOpen, spotifyMinimized]);
+  // Determine which player is active
+  const activePlayer = spotifyOpen ? 'spotify' : youtubeOpen ? 'youtube' : null;
+  const isOpen = spotifyOpen || youtubeOpen;
+  
+  const currentTrackId = activePlayer === 'spotify' ? spotifyTrackId : youtubeTrackId;
+  const currentAutoplay = activePlayer === 'spotify' ? autoplaySpotify : autoplayYoutube;
+  const closePlayer = activePlayer === 'spotify' ? closeSpotify : closeYoutube;
+  const meta = activePlayer ? providerMeta[activePlayer] : null;
 
-  useEffect(() => {
-    if (youtubeOpen && !youtubeMinimized) {
-      setSpotifyMinimized(true);
-    }
-  }, [youtubeOpen, youtubeMinimized]);
+  if (!isOpen || !meta) return null;
 
-  const renderPlayer = (type: 'spotify' | 'youtube', isMinimized: boolean, setMinimized: (val: boolean) => void, close: () => void, trackId: string | null, autoplay: boolean, isOpen: boolean) => {
-    if (!isOpen) return null;
+  if (!isOpen || !meta) return null;
 
-    const meta = providerMeta[type];
-
-    return (
+  return (
+    <>
+      {/* Single Interchangeable Player */}
       <motion.div
-        key={`player-${type}`}
         initial={{ y: 48, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 48, opacity: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="pointer-events-auto w-[320px]"
+        className="pointer-events-auto fixed top-4 md:bottom-0 right-4 z-[100] md:pb-20 pt-safe md:pt-0 w-[90vw] max-w-[320px] md:w-[320px]"
       >
         <div className={`overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br ${meta.color} shadow-2xl backdrop-blur-xl`}>
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-background/60">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-xl shadow-inner">{meta.badge}</span>
-              <div className="flex flex-col leading-tight">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Now Playing</span>
-                <span className="text-sm font-bold text-foreground">{meta.label}</span>
-              </div>
+          {/* Header - Always visible, compact on mobile */}
+          <div className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-background/80 backdrop-blur">
+            <span className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-background/80 text-lg md:text-xl shadow-inner">
+              {meta.badge}
+            </span>
+            <div className="flex flex-col leading-tight flex-1 min-w-0">
+              <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Now Playing</span>
+              <span className="text-xs md:text-sm font-bold text-foreground truncate">{meta.label}</span>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setQueueOpen(true)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
                 aria-label="View queue"
               >
-                <Menu className="h-4 w-4" />
+                <Menu className="h-3 w-3 md:h-4 md:w-4" />
               </button>
               <button
                 type="button"
-                onClick={() => setMinimized(!isMinimized)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
                 aria-label={isMinimized ? 'Expand player' : 'Minimize player'}
               >
                 {isMinimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
               <button
                 type="button"
-                onClick={close}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                onClick={closePlayer}
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
                 aria-label="Close player"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 md:h-4 md:w-4" />
               </button>
             </div>
           </div>
 
+          {/* Player Body - Shorter on mobile, hidden when minimized on desktop */}
           <AnimatePresence initial={false}>
             {!isMinimized && (
               <motion.div
-                key={`player-body-${type}`}
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="px-3 pb-3"
+                className="px-2 pb-2 md:px-3 md:pb-3"
               >
                 <div className="overflow-hidden rounded-xl">
-                  {type === 'spotify' ? (
-                    <SpotifyEmbedPreview providerTrackId={trackId} autoplay={autoplay} />
+                  {activePlayer === 'spotify' ? (
+                    <SpotifyEmbedPreview providerTrackId={currentTrackId} autoplay={currentAutoplay} />
                   ) : (
-                    <YouTubePlayer providerTrackId={trackId} autoplay={autoplay} />
+                    <YouTubePlayer providerTrackId={currentTrackId} autoplay={currentAutoplay} />
                   )}
                 </div>
               </motion.div>
@@ -119,17 +115,6 @@ export function EmbeddedPlayerDrawer() {
           </AnimatePresence>
         </div>
       </motion.div>
-    );
-  };
-
-  return (
-    <div className="pointer-events-none fixed top-4 md:bottom-0 right-4 z-60 md:pb-20 pt-safe md:pt-0 flex gap-3 items-start md:items-end">
-      <AnimatePresence>
-        {renderPlayer('youtube', youtubeMinimized, setYoutubeMinimized, closeYoutube, youtubeTrackId, autoplayYoutube, youtubeOpen)}
-      </AnimatePresence>
-      <AnimatePresence>
-        {renderPlayer('spotify', spotifyMinimized, setSpotifyMinimized, closeSpotify, spotifyTrackId, autoplaySpotify, spotifyOpen)}
-      </AnimatePresence>
 
       {/* Queue Sheet */}
       <QueueSheet
@@ -143,6 +128,6 @@ export function EmbeddedPlayerDrawer() {
         onClearQueue={clearQueue}
         onShuffleQueue={shuffleQueue}
       />
-    </div>
+    </>
   );
 }
