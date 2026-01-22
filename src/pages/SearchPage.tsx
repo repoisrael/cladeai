@@ -30,6 +30,13 @@ export default function SearchPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
 
+  // Debug: Log seedTracks on mount
+  useEffect(() => {
+    console.log('🔍 SearchPage mounted');
+    console.log('📊 seedTracks count:', seedTracks.length);
+    console.log('📦 First track:', seedTracks[0]);
+  }, []);
+
   // Debounced Spotify search
   useEffect(() => {
     if (searchMode !== 'song' || !query.trim() || !user || !isSpotifyConnected) {
@@ -267,6 +274,9 @@ export default function SearchPage() {
               {isSearching && <Loader2 className="w-3 h-3 animate-spin" />}
               {spotifyResults.length > 0 && (
                 <span className="text-[#1DB954] text-xs">via Spotify</span>
+              )}
+              {results.length > 0 && (
+                <span className="text-xs text-purple-500">via Local DB ({seedTracks.length} tracks)</span>
               )}
             </h2>
             <div className="space-y-2">
