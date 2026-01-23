@@ -33,7 +33,7 @@ export function TikTokStyleButtons({
   };
 
   return (
-    <div className="fixed right-3 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-4 md:hidden transform">
+    <div className="fixed right-3 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-4 md:hidden transform">
       {/* Like Button */}
       <motion.button
         whileTap={{ scale: 0.9 }}

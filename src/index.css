@@ -269,6 +269,17 @@
    reserves space at the bottom of the page equal to the player's height so
    the player never visually covers content or buttons. The CSS variable
    --clade-player-height is set from JS (PlayerProvider) and falls back to 52px. */
-body.clade-player-open {
-  padding-bottom: calc(var(--clade-player-height, 52px) + env(safe-area-inset-bottom));
+
+/* Mobile: top padding for fixed top-right player */
+@media (max-width: 768px) {
+  body.clade-player-open {
+    padding-top: max(env(safe-area-inset-top), 10rem);
+  }
+}
+
+/* Desktop: bottom padding for fixed bottom player */
+@media (min-width: 769px) {
+  body.clade-player-open {
+    padding-bottom: calc(var(--clade-player-height, 52px) + env(safe-area-inset-bottom));
+  }
 }
