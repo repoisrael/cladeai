@@ -22,6 +22,7 @@ import SectionYouTubeSnippet from '@/components/SectionYouTubeSnippet';
 import { TrackLineageView } from '@/components/TrackLineageView';
 import { TrackComments } from '@/components/TrackComments';
 import { TikTokStyleButtons } from '@/components/TikTokStyleButtons';
+import { QuickStreamButtons } from '@/components/QuickStreamButtons';
 import { ScrollingComments } from '@/components/ScrollingComments';
 import { getTrackSections } from '@/api/trackSections';
 import { searchYouTubeVideos, VideoResult } from '@/services/youtubeSearchService';
@@ -448,45 +449,18 @@ export default function TrackDetailPage() {
               </div>
             )}
 
-            {/* Play Controls - Clickable Provider Icons */}
+            {/* Play Controls - Provider Icons */}
             <div className="flex gap-3 pt-2">
-              {track.youtube_id && (
-                <Button
-                  size="lg"
-                  onClick={() => {
-                    openPlayer({
-                      provider: 'youtube',
-                      providerTrackId: track.youtube_id!,
-                      canonicalTrackId: track.id,
-                      autoplay: true,
-                      context: 'track_detail',
-                    });
-                  }}
-                  className="flex-1 gap-2"
-                >
-                  <span className="text-xl">▶</span>
-                  Play on YouTube
-                </Button>
-              )}
-              {track.spotify_id && (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => {
-                    openPlayer({
-                      provider: 'spotify',
-                      providerTrackId: track.spotify_id!,
-                      canonicalTrackId: track.id,
-                      autoplay: true,
-                      context: 'track_detail',
-                    });
-                  }}
-                  className="flex-1 gap-2"
-                >
-                  <span className="text-xl">🎧</span>
-                  Play on Spotify
-                </Button>
-              )}
+              <QuickStreamButtons
+                track={{
+                  spotifyId: track.spotify_id,
+                  youtubeId: track.youtube_id,
+                }}
+                canonicalTrackId={track.id}
+                trackTitle={track.title}
+                trackArtist={track.artist}
+                size="lg"
+              />
             </div>
           </div>
         </motion.div>

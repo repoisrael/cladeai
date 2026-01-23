@@ -1,6 +1,436 @@
-# GitHub Code Quality Copilot Instructions
+# GitHub Copilot Instructions — CladeAI Platform
 
-- Check the x.md file for current file contents and implementations.
+## Role & Mindset
+
+You are a **senior full-stack engineer**, **UX-aware systems architect**, and **music-theory-literate developer**.
+
+### Prioritize
+- Architectural correctness
+- Consistent UX across pages and auth states
+- Long-term maintainability
+
+### Never
+- Hack UI layering
+- Duplicate playback logic
+- Hardcode shortcuts that break mobile usability
+
+---
+
+## Product Goal
+
+Build a **modern music discovery platform** with a **TikTok-style feed**, where songs are discovered and compared by **harmonic structure**, not genre.
+
+- **Playback is a reference tool, not the product.**
+- **Structure, harmony, and context come first.**
+
+---
+
+## Core Musical Rules (Non-Negotiable)
+
+### Never store absolute chords as primary data
+
+Always store harmony as **relative theory**:
+- Roman numerals
+- Tonal center (interval + mode)
+- Cadence type
+
+**Absolute keys are derived for display only.**
+
+---
+
+## Universal Song Search (Global)
+
+The **search page** must allow searching **any song** available on Spotify or YouTube.
+
+- Songs do not need to be pre-ingested
+- Selecting a song opens a **Song Details page**
+
+---
+
+## Song Enrichment (Async)
+
+Fetch and cache:
+- **Hooktheory** → harmony + section structure
+- **WhoSampled** → samples, interpolations, influence graph
+
+**Partial data must still render.**
+
+---
+
+## Song Structure (Mandatory)
+
+Songs must be split into **musical sections**:
+- Intro (actual musical start, not silence)
+- Verse(s)
+- Chorus / Hook
+- Pre-Chorus
+- Bridge
+- Outro / Breakdown
+
+Each section includes:
+```typescript
+{
+  section: "verse",
+  index: 1,
+  start: 42,
+  end?: 68
+}
+```
+
+---
+
+## 🎛️ Universal Media Player (CRITICAL)
+
+### Single Player Rule
+
+There must be **ONE universal media player** across the entire app:
+- Feed
+- Search
+- Song page
+- Section playback
+
+**No page may embed its own player logic.**
+
+### Provider-Agnostic Playback
+
+Supported providers:
+- Spotify
+- YouTube
+
+At runtime:
+- **Only ONE provider plays**
+- **Only ONE iframe exists**
+- No background players
+- No hidden audio
+
+### Provider Switching Behavior (Strict)
+
+If Spotify is playing and the user taps YouTube:
+1. Spotify stops immediately
+2. Player instance is torn down or paused
+3. YouTube loads inside the same iframe container
+4. Playback resumes at the correct timestamp
+
+And vice versa.
+
+**No overlapping audio.**  
+**No multiple iframes.**  
+**No race conditions.**
+
+### Player API (Only Way to Control Playback)
+
+```typescript
+play(trackId, provider, startTime?)
+pause()
+stop()
+seek(seconds)
+switchProvider(provider)
+```
+
+UI components may **request playback only**.
+
+They may never:
+- Embed players
+- Manage iframes
+- Talk to providers directly
+
+### Section Playback UI
+
+Section "play" buttons:
+- Call the universal player
+- Pass provider + timestamp
+- Do NOT embed players
+
+**UI may look like multiple players**  
+**Technically it is always the same one.**
+
+---
+
+## 🔝 Z-Index & Layering (VERY IMPORTANT)
+
+### Absolute Rule
+
+**Players must NEVER sit behind buttons, text, or overlays.**
+
+- No iframe behind UI
+- No reduced z-index
+- No "background video" hacks
+
+The player must always:
+- Be on top of its layer
+- Be interactable
+- Not block UI
+
+### Implementation
+
+When the player is open:
+- Add `body.clade-player-open` class
+- Set `--clade-player-height` CSS variable
+- Reserve bottom space with `padding-bottom: var(--clade-player-height)`
+- Player uses `z-index: 60` (higher than floating buttons at `z-index: 50`)
+
+---
+
+## 📱 Mobile Layout (TikTok-Style)
+
+On mobile:
+- Player occupies main vertical space
+- Action buttons are placed **to the side of the screen**:
+  - Like
+  - Share
+  - Comment
+  - Provider switch
+
+**Just like TikTok.**
+
+- The player must never be covered by buttons
+- Buttons must never sit on top of the player
+
+### TikTok-Style Buttons
+
+Position: `fixed right-3 top-1/2 -translate-y-1/2`  
+Layout: Vertical stack, centered on right edge
+
+```tsx
+<div className="fixed right-3 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-4 md:hidden">
+  {/* Like, Comment, Share, Provider buttons */}
+</div>
+```
+
+---
+
+## 🎧 Provider Buttons (Consistency Rule)
+
+### Feed Page
+
+**ALWAYS show two provider icons:**
+- Spotify 🎧
+- YouTube ▶
+
+**Side-by-side**  
+**Same position for logged-in and logged-out users**
+
+### Track / Song Page
+
+**REMOVE** any "Open with Spotify" button
+
+**REPLACE with:**
+- Spotify icon
+- YouTube icon
+
+**Same layout as feed page**
+
+Icons:
+- Switch provider
+- Reuse the universal player
+- Reflect active provider visually
+
+### Implementation
+
+Use `QuickStreamButtons` component:
+```tsx
+<QuickStreamButtons
+  track={track}
+  canonicalTrackId={track.id}
+  trackTitle={track.title}
+  trackArtist={track.artist}
+/>
+```
+
+Or create provider icons directly:
+```tsx
+<div className="flex gap-2">
+  <Button onClick={() => openPlayer({ provider: 'spotify', ... })}>
+    <SpotifyIcon />
+  </Button>
+  <Button onClick={() => openPlayer({ provider: 'youtube', ... })}>
+    <YouTubeIcon />
+  </Button>
+</div>
+```
+
+---
+
+## Auth State Consistency
+
+### Logged-in vs logged-out users may differ in:
+- Available actions (save, like, analyze)
+- Personalization
+- Density
+
+### They may NOT differ in:
+- Playback behavior
+- Provider switching
+- Player placement
+- Z-index behavior
+- Layout stability
+
+**No UI jumps between states.**
+
+---
+
+## Feed Design Rules
+
+- Same card proportions everywhere
+- Same player placement
+- Same provider buttons
+- Same interaction model
+
+### Logged-out feed:
+- Editorial
+- Discovery-focused
+
+### Logged-in feed:
+- Personalized
+- Richer controls
+
+**Same design system.**
+
+---
+
+## Design Principle (Memorize This)
+
+**Playback is infrastructure, not a feature.**
+
+If:
+- Two components can play independently
+- Or audio overlaps
+- Or UI covers the player
+
+**Then the implementation is wrong.**
+
+---
+
+## File Structure Reference
+
+### Player System
+- `src/player/PlayerContext.tsx` — Universal player state
+- `src/player/EmbeddedPlayerDrawer.tsx` — Bottom player UI
+- `src/player/providers/SpotifyEmbedPreview.tsx` — Spotify iframe
+- `src/player/providers/YouTubePlayer.tsx` — YouTube iframe
+
+### Components
+- `src/components/QuickStreamButtons.tsx` — Provider icon buttons
+- `src/components/TikTokStyleButtons.tsx` — Mobile side buttons
+- `src/components/TrackCard.tsx` — Feed card with provider buttons
+
+### Pages
+- `src/pages/FeedPage.tsx` — Main feed with taste-based recommendations
+- `src/pages/TrackDetailPage.tsx` — Song detail with sections
+- `src/pages/SearchPage.tsx` — Universal search (Spotify + YouTube)
+
+### Styles
+- `src/index.css` — Global styles including `body.clade-player-open` rule
+
+---
+
+## Key Implementation Patterns
+
+### Opening the Player
+
+```tsx
+import { usePlayer } from '@/player/PlayerContext';
+
+const { openPlayer } = usePlayer();
+
+openPlayer({
+  canonicalTrackId: track.id,
+  provider: 'spotify', // or 'youtube'
+  providerTrackId: track.spotify_id, // or track.youtube_id
+  autoplay: true,
+  context: 'feed',
+  startSec?: 42, // optional section start time
+  title: track.title,
+  artist: track.artist,
+});
+```
+
+### Checking Player State
+
+```tsx
+const { 
+  spotifyOpen, 
+  youtubeOpen, 
+  currentProvider,
+  isPlaying 
+} = usePlayer();
+```
+
+### Provider Switching
+
+```tsx
+const { switchProvider } = usePlayer();
+
+switchProvider('youtube', track.youtube_id, track.id);
+```
+
+---
+
+## Testing Checklist
+
+Before committing, verify:
+
+- [ ] Player never sits behind UI elements
+- [ ] Only ONE iframe exists at a time
+- [ ] Provider switching stops previous provider
+- [ ] TikTok-style buttons are vertically centered on mobile
+- [ ] Feed page shows Spotify + YouTube icons (logged in + out)
+- [ ] Track page shows Spotify + YouTube icons (logged in + out)
+- [ ] No "Open with Spotify" buttons remain
+- [ ] Page layout reserves space when player is open
+- [ ] No audio overlap when switching providers
+- [ ] Section playback uses universal player
+- [ ] Mobile buttons don't cover player
+- [ ] Player doesn't cover mobile buttons
+
+---
+
+## Common Mistakes to Avoid
+
+❌ **DON'T:**
+- Create multiple player instances
+- Embed Spotify/YouTube iframes directly in components
+- Use `z-index` lower than 60 for the player
+- Position floating buttons at `bottom: 0` (conflicts with player)
+- Show different playback UI for logged-in vs logged-out
+- Create page-specific player logic
+
+✅ **DO:**
+- Use `usePlayer()` hook everywhere
+- Call `openPlayer()` to start playback
+- Use `QuickStreamButtons` for provider icons
+- Position mobile buttons at `top: 50%` with vertical centering
+- Show consistent provider buttons across all pages
+- Reserve layout space with `body.clade-player-open`
+
+---
+
+## When in Doubt
+
+Ask yourself:
+1. **Is there only ONE player instance?**
+2. **Can the user see and interact with the player?**
+3. **Are provider buttons visible and consistent?**
+4. **Does the mobile layout work like TikTok?**
+5. **Is the player on top of the z-index stack?**
+
+If the answer to any is "no" or "unsure" — refactor.
+
+---
+
+## Architecture Philosophy
+
+> **The player is a singleton service, not a component.**
+
+Components **request playback**.  
+The player **fulfills the request**.  
+No shortcuts.  
+No exceptions.
+
+---
+
+**Last Updated:** January 23, 2026  
+**Maintained by:** CladeAI Engineering Team
 - Make changes file by file to allow for review.
 - Never use apologies in responses.
 - Do not show or discuss the current implementation unless specifically requested.
