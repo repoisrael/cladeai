@@ -13,7 +13,10 @@ async function expectSinglePlayer(page) {
 
 test.describe('Universal Player Singleton Enforcement', () => {
   test('only one playback surface exists at all times', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/cladeai/feed');
+
+    await page.waitForSelector(providerSelectors.spotify);
+    await page.waitForSelector(providerSelectors.youtube);
 
     const spotifyButton = page.locator(providerSelectors.spotify).first();
     await expect(spotifyButton).toBeVisible();

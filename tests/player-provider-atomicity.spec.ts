@@ -3,7 +3,10 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Provider switch is atomic (no overlap)', () => {
   test('switching providers stops previous playback first', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/cladeai/feed');
+
+    await page.waitForSelector('[data-provider="spotify"]');
+    await page.waitForSelector('[data-provider="youtube"]');
 
     await page.click('[data-provider="spotify"]');
     await page.waitForTimeout(800);
