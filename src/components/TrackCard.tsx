@@ -6,7 +6,6 @@ import { NearbyListenersSheet } from './NearbyListenersSheet';
 import { ShareSheet } from './ShareSheet';
 import { AudioPreview } from './AudioPreview';
 import { QuickStreamButtons } from './QuickStreamButtons';
-import { YouTubeEmbed } from './YouTubeEmbed';
 import { SongSections } from './SongSections';
 import { CompactSongSections } from './CompactSongSections';
 import { TrackMenu } from './TrackMenu';
@@ -18,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useRecordListeningActivity } from '@/hooks/api/useNearbyListeners';
 import { useRecordPlay } from '@/hooks/api/useFollowing';
 import { useAuth } from '@/hooks/useAuth';
+import { usePlayer } from '@/player/PlayerContext';
 
 interface TrackCardProps {
   track: Track;
@@ -38,11 +38,11 @@ export function TrackCard({
 }: TrackCardProps) {
   const { user } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showYouTubeEmbed, setShowYouTubeEmbed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const playStartTimeRef = useRef<number | null>(null);
   const recordActivity = useRecordListeningActivity();
   const recordPlay = useRecordPlay();
+  const { openPlayer } = usePlayer();
 
   // Convert SongSection to TrackSection format
   const convertSections = useCallback((sections: SongSection[]): TrackSection[] => {
@@ -208,23 +208,9 @@ export function TrackCard({
         />
       )}
 
-      {/* Background with cover art or YouTube embed */}
+      {/* Background with cover art. IMPORTANT: All playback surfaces must live in the universal player only. */}
       <div className="absolute inset-0 z-0">
-        {showYouTubeEmbed && track.youtube_id && !isPipActive ? (
-          // YouTube embed as background when Watch button is active
-          <div className="w-full h-full relative">
-            <iframe
-              src={`https://www.youtube.com/embed/${track.youtube_id}?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&fs=1&iv_load_policy=3`}
-              title={`${track.title} - ${track.artist}`}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
-            {/* Gradient overlay - only covers bottom portion, doesn't block video controls */}
-            <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-background/90 via-background/50 to-transparent pointer-events-none" />
-          </div>
-        ) : track.cover_url ? (
+        {track.cover_url ? (
           <>
             <img
               src={track.cover_url}
@@ -331,21 +317,26 @@ export function TrackCard({
             </Button>
           )}
 
-          {/* YouTube embed button - inline play without leaving the app */}
+          {/* YouTube watch intent -> universal player only */}
           {track.youtube_id && (
             <Button
-              variant={showYouTubeEmbed ? 'default' : 'outline'}
+              variant="outline"
               size="lg"
-              onClick={() => setShowYouTubeEmbed(!showYouTubeEmbed)}
-              className={cn(
-                'gap-2',
-                showYouTubeEmbed
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'glass border-white/20 hover:bg-white/10'
-              )}
+              onClick={() =>
+                openPlayer({
+                  canonicalTrackId: track.id,
+                  provider: 'youtube',
+                  providerTrackId: track.youtube_id,
+                  autoplay: true,
+                  context: 'feed-card-watch',
+                  title: track.title,
+                  artist: track.artist,
+                })
+              }
+              className="gap-2 glass border-white/20 hover:bg-white/10"
             >
               <Youtube className="w-5 h-5" />
-              {showYouTubeEmbed ? 'Hide' : 'Watch'}
+              Watch
             </Button>
           )}
 
