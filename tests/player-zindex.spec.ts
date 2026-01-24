@@ -18,7 +18,8 @@ test.describe('Universal player z-index dominance', () => {
     const feedZ = await page.evaluate(() => {
       const feed = document.querySelector('[data-feed]');
       if (!feed) return 0;
-      return parseInt(getComputedStyle(feed).zIndex || '0', 10);
+      const val = parseInt(getComputedStyle(feed).zIndex || '0', 10);
+      return Number.isNaN(val) ? 0 : val;
     });
 
     expect(playerZ).not.toBeNull();

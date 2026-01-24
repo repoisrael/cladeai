@@ -1095,6 +1095,25 @@ export default function ProfilePage() {
             <span className="text-xs text-muted-foreground">{savesCount} songs</span>
           </button>
         </motion.div>
+
+        {isAdmin && (
+          <motion.div
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            transition={{ delay: 0.3 }}
+            className="mt-6"
+          >
+            <Button
+              variant="outline"
+              className="w-full justify-center gap-2"
+              onClick={() => navigate('/admin')}
+            >
+              <Shield className="w-4 h-4" />
+              Admin Dashboard
+            </Button>
+          </motion.div>
+        )}
       </ResponsiveContainer>
 
       {/* Theme Editor Modal */}

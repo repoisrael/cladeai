@@ -3,6 +3,7 @@ import { PageLayout } from '@/components/shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminStats, useFlaggedContent } from '@/hooks/api/useAdmin';
+import { useLatestTestRuns, useTestRunHistory } from '@/hooks/api/useTestRuns';
 import { Users, Music, PlayCircle, Heart, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +12,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: flaggedContent } = useFlaggedContent();
+  const { data: latestRuns = [] } = useLatestTestRuns();
+  const { data: history = [] } = useTestRunHistory(50);
 
   const metrics = [
     {
@@ -59,11 +62,12 @@ export default function AdminDashboard() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="moderation">Moderation</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="testruns">Test Runs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -162,6 +166,73 @@ export default function AdminDashboard() {
                 <p className="text-muted-foreground">
                   Settings panel will be added here
                 </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="testruns" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Latest Test Runs</CardTitle>
+                <CardDescription>Hourly sanity → pentest → performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-3">
+                  {['sanity','pentest','performance'].map((suite) => {
+                    const run = latestRuns.find(r => r.suite === suite);
+                    return (
+                      <div key={suite} className="p-4 rounded-lg bg-muted/40 border border-border/60">
+                        <div className="text-sm font-semibold capitalize">{suite}</div>
+                        <div className="text-xl font-bold mt-1">{run?.status || 'unknown'}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {run?.started_at ? new Date(run.started_at).toLocaleString() : 'No data'}
+                        </div>
+                        {run?.duration_ms && (
+                          <div className="text-xs text-muted-foreground">{Math.round(run.duration_ms/1000)}s</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>History (latest 50)</CardTitle>
+                <CardDescription>Status, timings, and artifact links</CardDescription>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground">
+                      <th className="py-2 pr-3">Suite</th>
+                      <th className="py-2 pr-3">Status</th>
+                      <th className="py-2 pr-3">Started</th>
+                      <th className="py-2 pr-3">Duration</th>
+                      <th className="py-2 pr-3">Commit</th>
+                      <th className="py-2 pr-3">Artifacts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((run) => (
+                      <tr key={`${run.run_id || run.id}-${run.suite}`} className="border-t border-border/60">
+                        <td className="py-2 pr-3 capitalize">{run.suite}</td>
+                        <td className="py-2 pr-3">{run.status}</td>
+                        <td className="py-2 pr-3 text-muted-foreground">
+                          {run.started_at ? new Date(run.started_at).toLocaleString() : '—'}
+                        </td>
+                        <td className="py-2 pr-3">{run.duration_ms ? `${Math.round(run.duration_ms/1000)}s` : '—'}</td>
+                        <td className="py-2 pr-3 text-xs font-mono truncate max-w-[120px]" title={run.commit_sha || ''}>{run.commit_sha?.slice(0,7) || '—'}</td>
+                        <td className="py-2 pr-3">
+                          {run.artifacts_url ? (
+                            <a href={run.artifacts_url} target="_blank" rel="noreferrer" className="text-primary underline text-xs">View</a>
+                          ) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </CardContent>
             </Card>
           </TabsContent>
