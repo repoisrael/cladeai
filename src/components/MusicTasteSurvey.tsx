@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'router';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Music, Headphones, Heart, TrendingUp, Mic2, Guitar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
