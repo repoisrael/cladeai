@@ -84,7 +84,12 @@ export function EmbeddedPlayerDrawer() {
   // Mobile: Compact strip at top-right corner (audio-only, no video)
   // Desktop: Bottom player bar with full controls
   return (
-    <div id="universal-player" data-player="universal">
+    <div
+      id="universal-player"
+      data-player="universal"
+      className="z-[120] md:sticky md:top-0 md:left-1/2 md:-translate-x-1/2 md:max-w-5xl md:w-full md:px-4"
+      style={{ transform: 'translateX(-50%)' }}
+    >
       {/* Mobile Player - Top-right compact strip */}
       <div
         className={cn(
@@ -222,15 +227,15 @@ export function EmbeddedPlayerDrawer() {
       <div
         className={cn(
           'hidden md:flex',
-          'fixed bottom-0 left-0 right-0 z-[60] w-full items-center justify-center',
+          'sticky top-0 left-1/2 -translate-x-1/2 z-[120] w-full items-center justify-center pointer-events-auto',
           meta.color
         )}
-        style={{ 
-          aspectRatio: '12/1', 
-          minHeight: 0, 
-          height: 'var(--clade-player-height,52px)', 
-          maxHeight: '52px', 
-          boxShadow: '0 -2px 16px rgba(0,0,0,0.18)' 
+        style={{
+          aspectRatio: '12/1',
+          minHeight: 0,
+          height: 'var(--clade-player-height,52px)',
+          maxHeight: '52px',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.18)'
         }}
         role="region"
         aria-label="Now Playing Desktop"
@@ -259,8 +264,7 @@ export function EmbeddedPlayerDrawer() {
       {/* Single shared embed container to guarantee exactly one iframe */}
       <div
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[60] pointer-events-auto',
-          // Hide the visual area on mobile while keeping the audio alive
+          'fixed bottom-0 left-0 right-0 z-[120] pointer-events-auto',
           'h-[1px] overflow-hidden md:h-[52px]'
         )}
         aria-hidden

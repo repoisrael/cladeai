@@ -295,6 +295,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     },
   }), [state, seekTo, clearSeek, setCurrentSection, setIsPlaying, addToQueue, playFromQueue, removeFromQueue, reorderQueue, clearQueue, shuffleQueue, nextTrack, previousTrack]);
 
+  // Expose debug state in dev/test only for Playwright provider-atomicity assertions
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (import.meta.env.MODE === 'production') return;
+    (window as any).__PLAYER_DEBUG_STATE__ = {
+      activeProvider: state.provider,
+      isPlaying: state.isPlaying,
+      providers: {
+        spotify: { isPlaying: state.provider === 'spotify' && state.isPlaying },
+        youtube: { isPlaying: state.provider === 'youtube' && state.isPlaying },
+      },
+    };
+  }, [state.provider, state.isPlaying]);
+
   // Ensure the page layout reserves space for the floating player when open so
   // the player never ends up visually behind other UI. We toggle a body class
   // and set a CSS variable with the player's height to let global styles

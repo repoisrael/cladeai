@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { test, expect } from '@playwright/test';
 
 const playerLocator = '[data-player="universal"]';
@@ -6,7 +7,7 @@ const providerSelectors = {
   youtube: '[data-provider="youtube"]',
 };
 
-async function expectSinglePlayer(page: import('@playwright/test').Page) {
+async function expectSinglePlayer(page) {
   await expect(page.locator(playerLocator)).toHaveCount(1);
 }
 

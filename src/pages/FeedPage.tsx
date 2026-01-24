@@ -202,7 +202,7 @@ export default function FeedPage() {
   const currentTrack = tracks[currentIndex];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col touch-pan-y" ref={containerRef}>
+    <div className="min-h-screen bg-background flex flex-col touch-pan-y" ref={containerRef} data-feed>
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-40 glass-strong safe-top">
         <ResponsiveContainer maxWidth="full">

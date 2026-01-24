@@ -11,9 +11,8 @@ const AuthGatePage = () => {
     if (loading) return;
     if (user) {
       navigate('/feed', { replace: true });
-    } else if (guestMode) {
-      navigate('/feed', { replace: true });
     } else {
+      // Always honor sign-in intent by routing to login when not authenticated
       navigate('/login', { replace: true });
     }
   }, [user, guestMode, loading, navigate]);
