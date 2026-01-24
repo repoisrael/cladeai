@@ -53,7 +53,7 @@ const App = () => (
             <PlayerProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter basename="/clade">
+              <BrowserRouter basename="/cladeai">
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
