@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Music, Loader2, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -17,7 +18,7 @@ const authSchema = z.object({
 
 export default function AuthPage() {
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,10 +27,16 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect if already logged in
-  if (user) {
-    navigate('/');
-    return null;
+  // Redirect to home once auth state is known and user is present
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/', { replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
+  // While auth is loading or redirecting, show a spinner
+  if (authLoading || user) {
+    return <LoadingSpinner fullScreen />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
