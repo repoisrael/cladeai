@@ -6,7 +6,6 @@ import { FeedSidebar } from '@/components/FeedSidebar';
 import { LiveChat } from '@/components/LiveChat';
 import { ScrollingComments } from '@/components/ScrollingComments';
 import { BottomNav } from '@/components/BottomNav';
-import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { ResponsiveContainer, DesktopColumns } from '@/components/layout/ResponsiveLayout';
 import { useFeedTracks } from '@/hooks/api/useTracks';
 import { useSpotifyRecentlyPlayed } from '@/hooks/api/useSpotifyUser';
@@ -18,6 +17,7 @@ import { ChevronUp, ChevronDown, LogIn, AlertCircle, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { usePlayer } from '@/player/PlayerContext';
 
 export default function FeedPage() {
   const { user, loading: authLoading } = useAuth();
@@ -69,6 +69,7 @@ export default function FeedPage() {
   const [interactions, setInteractions] = useState<Map<string, Set<InteractionType>>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(!user);
+  const { openPlayer } = usePlayer();
 
   useEffect(() => {
     if (user) {
@@ -76,9 +77,6 @@ export default function FeedPage() {
     }
   }, [user]);
   
-  // PiP state - managed at feed level so it persists across track changes
-  const [pipVideo, setPipVideo] = useState<{ videoId: string; title: string } | null>(null);
-
   const handleInteraction = (type: InteractionType) => {
     if (!user) {
       setShowAuthPrompt(true);
@@ -178,11 +176,6 @@ export default function FeedPage() {
       container.removeEventListener('touchend', handleTouchEnd);
     };
   }, [goToNext, goToPrevious]);
-
-  // Handle entering PiP mode from TrackCard
-  const handlePipModeActivate = (videoId: string, title: string) => {
-    setPipVideo({ videoId, title });
-  };
 
   if (authLoading || tracksLoading) {
     return (
@@ -311,8 +304,18 @@ export default function FeedPage() {
                         isActive={true}
                         onInteraction={handleInteraction}
                         interactions={interactions.get(currentTrack.id) || new Set()}
-                        onPipModeActivate={handlePipModeActivate}
-                        isPipActive={pipVideo?.videoId === currentTrack.youtube_id}
+                         onPipModeActivate={(videoId, title) => {
+                           if (!videoId) return;
+                           openPlayer({
+                             canonicalTrackId: currentTrack.id,
+                             provider: 'youtube',
+                             providerTrackId: videoId,
+                             autoplay: true,
+                             context: 'feed',
+                             title,
+                             artist: currentTrack.artist,
+                           });
+                         }}
                       />
                     </motion.div>
                   )}
@@ -328,21 +331,6 @@ export default function FeedPage() {
           />
         </ResponsiveContainer>
       </main>
-
-      {/* Picture-in-Picture mini player - persists across track changes */}
-      <AnimatePresence>
-        {pipVideo && (
-          <YouTubeEmbed
-            key={`pip-${pipVideo.videoId}`}
-            videoId={pipVideo.videoId}
-            title={pipVideo.title}
-            onClose={() => setPipVideo(null)}
-            onPipModeChange={(isPip) => {
-              if (!isPip) setPipVideo(null);
-            }}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Scrolling comments overlay for current track */}
       {tracks[currentIndex] && (
