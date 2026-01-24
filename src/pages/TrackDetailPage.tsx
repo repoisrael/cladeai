@@ -43,15 +43,17 @@ export default function TrackDetailPage() {
   const { trackId } = useParams();
   const navigate = useNavigate();
   const { data: track, isLoading } = useTrack(decodeURIComponent(trackId || ''));
-  const { playVideo, currentVideo, currentTime, seekTo } = useYouTubePlayer();
   const { openPlayer, provider, trackId: activeTrackId, isPlaying } = usePlayer();
+  // IMPORTANT: There must NEVER be more than one playback surface.
+  // YouTube must be played only through the universal player.
+  const currentTime = 0;
+  const seekTo = (_seconds: number) => {};
   
   const [sections, setSections] = useState<TrackSection[]>([]);
   const [hooktheoryData, setHooktheoryData] = useState<any>(null);
   const [whoSampledData, setWhoSampledData] = useState<any>(null);
   const [youtubeVideos, setYoutubeVideos] = useState<VideoSource[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   
   // Get current section and chord based on playback time
   const currentTimeMs = currentTime * 1000;
@@ -100,22 +102,6 @@ export default function TrackDetailPage() {
       }));
       setYoutubeVideos(videos);
 
-      // Auto-play first video using persistent player at the intro timestamp when available
-      if (videos.length > 0 && track.artist && track.title) {
-        const firstVideo = videos[0];
-        setActiveVideoId(firstVideo.videoId);
-
-        // find intro section start (ms) or fallback to 0
-        const intro = sections.find(s => s.label?.toLowerCase() === 'intro') || sections[0];
-        const introStartSec = intro ? Math.floor((intro.start_ms || 0) / 1000) : 0;
-
-        playVideo({
-          videoId: firstVideo.videoId,
-          title: track.title,
-          artist: track.artist,
-          startSeconds: introStartSec,
-        });
-      }
     } catch (err) {
       console.error('Failed to load YouTube videos:', err);
     } finally {
@@ -281,21 +267,20 @@ export default function TrackDetailPage() {
         startSec: startSeconds,
         context: 'section_navigation',
       });
-    } else if (activeVideoId) {
-      // Fallback to YouTube player context if no youtube_id
-      seekTo(startSeconds);
     }
   }
 
   function handlePlayVideo(video: VideoSource) {
     if (!track?.artist || !track?.title) return;
-    
-    setActiveVideoId(video.videoId);
-    playVideo({
-      videoId: video.videoId,
+
+    openPlayer({
+      canonicalTrackId: track.id,
+      provider: 'youtube',
+      providerTrackId: video.videoId,
+      autoplay: true,
+      context: 'track-detail-video',
       title: track.title,
       artist: track.artist,
-      startSeconds: 0,
     });
   }
 
@@ -462,27 +447,6 @@ export default function TrackDetailPage() {
             </div>
           </div>
         </motion.div>
-
-        {/* Embedded YouTube Player */}
-        {currentVideo && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-2xl mx-auto"
-          >
-            <div className="aspect-video rounded-lg overflow-hidden shadow-xl">
-              <iframe
-                src={`https://www.youtube.com/embed/${currentVideo.videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1${
-                  currentVideo.startSeconds ? `&start=${currentVideo.startSeconds}` : ''
-                }`}
-                title={currentVideo.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
-          </motion.div>
-        )}
 
         {/* Embedded Spotify Player */}
         {track.spotify_id && (
