@@ -77,7 +77,7 @@ export function EmbeddedPlayerDrawer() {
     if (players.length > 1) {
       throw new Error('FATAL: More than one universal player mounted. This is a bug.');
     }
-  });
+  }, []);
 
   if (!isOpen || !provider || !trackId) return null;
 

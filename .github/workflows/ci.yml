@@ -61,6 +61,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Enforce single universal player
+        run: bunx playwright test tests/player-singleton.spec.ts
+
       - name: Run tests
         run: bun run test
 
