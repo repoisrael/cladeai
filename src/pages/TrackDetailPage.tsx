@@ -16,7 +16,6 @@ import { useTrack } from '@/hooks/api/useTracks';
 import { usePlayer } from '@/player/PlayerContext';
 import { BottomNav } from '@/components/BottomNav';
 import { ChordBadge } from '@/components/ChordBadge';
-import SectionYouTubeSnippet from '@/components/SectionYouTubeSnippet';
 import { TrackLineageView } from '@/components/TrackLineageView';
 import { TrackComments } from '@/components/TrackComments';
 import { TikTokStyleButtons } from '@/components/TikTokStyleButtons';
@@ -448,45 +447,7 @@ export default function TrackDetailPage() {
           </div>
         </motion.div>
 
-        {/* Embedded Spotify Player */}
-        {track.spotify_id && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="w-full max-w-2xl mx-auto"
-          >
-            <div className="rounded-lg overflow-hidden shadow-xl">
-                {
-                  (() => {
-                    const src = (() => {
-                      const params = new URLSearchParams({ utm_source: 'generator', theme: '0' });
-                      // If the global player has requested autoplay for this spotify track,
-                      // add the autoplay flag to the embed URL so the embed knows the intent.
-                      if (provider === 'spotify' && activeTrackId === track.spotify_id && isPlaying) {
-                        params.set('autoplay', '1');
-                      }
-                      return `https://open.spotify.com/embed/track/${track.spotify_id}?${params.toString()}`;
-                    })();
-
-                    return (
-                      <iframe
-                        style={{ borderRadius: '12px' }}
-                        src={src}
-                        width="100%"
-                        height="352"
-                        frameBorder="0"
-                        allowFullScreen={false}
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                        loading="lazy"
-                        className="w-full"
-                      />
-                    );
-                  })()
-                }
-            </div>
-          </motion.div>
-        )}
+        {/* IMPORTANT: Playback surfaces must live in the universal player. Use provider buttons above. */}
 
         {/* Tabs */}
         <Tabs defaultValue="sections" className="w-full">
@@ -538,13 +499,28 @@ export default function TrackDetailPage() {
                             {formatDuration(section.end_ms - section.start_ms)}
                           </div>
 
-                          {/* Tiny YouTube snippet for this section (uses first video source or track.youtube_id) */}
+                          {/* IMPORTANT: Playback surfaces must stay in the universal player */}
                           {((videoSources && videoSources[0]) || track.youtube_id) && (
                             <div className="mt-2">
-                              <SectionYouTubeSnippet
-                                videoId={(videoSources && videoSources[0]?.videoId) || track.youtube_id!}
-                                startSeconds={Math.floor(section.start_ms / 1000)}
-                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  openPlayer({
+                                    canonicalTrackId: track.id,
+                                    provider: 'youtube',
+                                    providerTrackId: (videoSources && videoSources[0]?.videoId) || track.youtube_id!,
+                                    autoplay: true,
+                                    startSec: Math.floor(section.start_ms / 1000),
+                                    context: 'section-snippet',
+                                    title: track.title,
+                                    artist: track.artist,
+                                  })
+                                }
+                                className="text-xs h-8 px-3"
+                              >
+                                Play section
+                              </Button>
                             </div>
                           )}
                         </div>
