@@ -12,8 +12,8 @@ interface FloatingPlayersContextType {
   spotifyPlayer: FloatingPlayerState | null;
   youtubePlayer: FloatingPlayerState | null;
   activePlayer: 'spotify' | 'youtube' | null;
-  playSpotify: (trackId: string, title: string, artist?: string) => void;
-  playYouTube: (videoId: string, title: string, artist?: string) => void;
+  playSpotify: (trackId: string, title?: string, artist?: string) => void;
+  playYouTube: (videoId: string, title?: string, artist?: string) => void;
   seekYouTube: (seconds: number) => void;
   closeSpotify: () => void;
   closeYouTube: () => void;
@@ -23,36 +23,31 @@ interface FloatingPlayersContextType {
 // const FloatingPlayersContext = createContext<FloatingPlayersContextType | undefined>(undefined);
 
 export function FloatingPlayersProvider({ children }: { children: ReactNode }) {
-  const [spotifyPlayer, setSpotifyPlayer] = useState<FloatingPlayerState | null>(null);
-  const [youtubePlayer, setYoutubePlayer] = useState<FloatingPlayerState | null>(null);
-  const [activePlayer, setActivePlayer] = useState<'spotify' | 'youtube' | null>(null);
-  const [youtubeSeekTime, setYoutubeSeekTime] = useState<number | null>(null);
+  // Delegate to PlayerContext to avoid duplicate UI/providers
+  const player = usePlayer();
 
-  const playSpotify = (trackId: string, title: string, artist?: string) => {
-    setSpotifyPlayer({ type: 'spotify', trackId, title, artist });
-    setActivePlayer('spotify');
+  const spotifyPlayer = player.spotifyTrackId ? { type: 'spotify' as const, trackId: player.spotifyTrackId } : null;
+  const youtubePlayer = player.youtubeTrackId ? { type: 'youtube' as const, trackId: player.youtubeTrackId } : null;
+  const activePlayer = player.spotifyOpen ? 'spotify' : player.youtubeOpen ? 'youtube' : null;
+
+  const playSpotify = (trackId: string, title?: string, artist?: string) => {
+    player.openPlayer({ canonicalTrackId: null, provider: 'spotify', providerTrackId: trackId, autoplay: true });
   };
 
-  const playYouTube = (videoId: string, title: string, artist?: string) => {
-    setYoutubePlayer({ type: 'youtube', trackId: videoId, title, artist });
-    setActivePlayer('youtube');
+  const playYouTube = (videoId: string, title?: string, artist?: string) => {
+    player.openPlayer({ canonicalTrackId: null, provider: 'youtube', providerTrackId: videoId, autoplay: true });
   };
-  
+
   const seekYouTube = (seconds: number) => {
-    setYoutubeSeekTime(seconds);
-    setActivePlayer('youtube');
-    // Reset seek time after a brief delay
-    setTimeout(() => setYoutubeSeekTime(null), 100);
+    player.seekTo(seconds);
   };
 
-  const closeSpotify = () => {
-    setSpotifyPlayer(null);
-    if (activePlayer === 'spotify') setActivePlayer(null);
-  };
-  
-  const closeYouTube = () => {
-    setYoutubePlayer(null);
-    if (activePlayer === 'youtube') setActivePlayer(null);
+  const closeSpotify = () => player.closeSpotify();
+  const closeYouTube = () => player.closeYoutube();
+
+  const setActivePlayer = (p: 'spotify' | 'youtube') => {
+    // switchProvider will open the requested provider while closing the other
+    player.switchProvider(p, p === 'spotify' ? player.spotifyTrackId : player.youtubeTrackId, player.canonicalTrackId ?? undefined);
   };
 
   return (
@@ -70,45 +65,6 @@ export function FloatingPlayersProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      
-      {/* Render floating players - stacked vertically in bottom-right */}
-      <div className="fixed bottom-20 right-4 flex flex-col gap-4 pointer-events-none">
-        <div 
-          className="pointer-events-auto transition-all"
-          style={{ zIndex: activePlayer === 'youtube' ? 100 : 50 }}
-          onClick={() => youtubePlayer && setActivePlayer('youtube')}
-        >
-          {youtubePlayer && (
-            <FloatingPlayer
-              key="youtube-player"
-              type="youtube"
-              trackId={youtubePlayer.trackId}
-              title={youtubePlayer.title}
-              artist={youtubePlayer.artist}
-              onClose={closeYouTube}
-              seekTime={youtubeSeekTime}
-              isActive={activePlayer === 'youtube'}
-            />
-          )}
-        </div>
-        <div 
-          className="pointer-events-auto transition-all"
-          style={{ zIndex: activePlayer === 'spotify' ? 100 : 50 }}
-          onClick={() => spotifyPlayer && setActivePlayer('spotify')}
-        >
-          {spotifyPlayer && (
-            <FloatingPlayer
-              key="spotify-player"
-              type="spotify"
-              trackId={spotifyPlayer.trackId}
-              title={spotifyPlayer.title}
-              artist={spotifyPlayer.artist}
-              onClose={closeSpotify}
-              isActive={activePlayer === 'spotify'}
-            />
-          )}
-        </div>
-      </div>
     </FloatingPlayersContext.Provider>
   );
 }

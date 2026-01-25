@@ -1,6 +1,6 @@
 /**
  * Persistent YouTube Player Context
- * 
+ *
  * Manages a global YouTube player that continues playing across navigation
  */
 
@@ -35,14 +35,14 @@ export function YouTubePlayerProvider({ children }: { children: ReactNode }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const playerRef = useRef<any>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<number | null>(null);
 
   // Update current time while playing with elapsed-time based updates to avoid drift
   useEffect(() => {
     if (isPlaying && currentVideo) {
       lastUpdateRef.current = performance.now();
-      intervalRef.current = setInterval(() => {
+      intervalRef.current = window.setInterval(() => {
         const now = performance.now();
         const last = lastUpdateRef.current ?? now;
         const delta = (now - last) / 1000; // seconds
@@ -91,7 +91,6 @@ export function YouTubePlayerProvider({ children }: { children: ReactNode }) {
   const setCurrentPlaybackTime = (seconds: number) => {
     setCurrentTime(seconds);
   };
-
 
   return (
     <YouTubePlayerContext.Provider
