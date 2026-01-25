@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
-import { Music, Sparkles, Waves, Play } from 'lucide-react';
+import { Music, Sparkles, Waves, Play, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 export function HeroSection() {
   const navigate = useNavigate();
+  const { enterGuestMode } = useAuth();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [activeNote, setActiveNote] = useState(0);
 
@@ -180,6 +182,19 @@ export function HeroSection() {
             <Play className="w-5 h-5 mr-2 inline-block group-hover:animate-pulse" />
             Start Exploring
             <Sparkles className="w-4 h-4 ml-2 inline-block" />
+          </Button>
+
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => {
+              enterGuestMode();
+              navigate('/feed');
+            }}
+            className="px-8 py-6 text-lg font-semibold border-2 border-[#FF00FF] text-[#FF00FF] hover:bg-[#FF00FF]/10 transition-all duration-300 hover:scale-105"
+          >
+            <Eye className="w-5 h-5 mr-2 inline-block" />
+            Browse as Guest
           </Button>
 
           <Button
