@@ -27,6 +27,11 @@ import type {
 import type { Track } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
+type AnalysisJobRequest = AnalysisRequest & {
+  audio_hash?: string;
+  isrc?: string;
+};
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
@@ -48,6 +53,14 @@ const ANALYSIS_CONFIG = {
   CURRENT_MODEL_VERSION: '1.0.0',
 } as const;
 
+const TTL_MS = ANALYSIS_CONFIG.CACHE_TTL_DAYS * 24 * 60 * 60 * 1000;
+const REANALYZE_MS = ANALYSIS_CONFIG.REANALYSIS_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+
+const withinWindow = (timestamp: string, windowMs: number) => {
+  const age = Date.now() - new Date(timestamp).getTime();
+  return age >= 0 && age <= windowMs;
+};
+
 // ============================================================================
 // MAIN ANALYSIS API
 // ============================================================================
@@ -58,12 +71,14 @@ const ANALYSIS_CONFIG = {
  */
 export async function getHarmonicAnalysis(
   trackId: string,
-  options: { forceReanalysis?: boolean } = {}
+  options: { forceReanalysis?: boolean; audioHash?: string; isrc?: string } = {}
 ): Promise<AnalysisResult | null> {
   try {
+    const { forceReanalysis, audioHash, isrc } = options;
+
     // Step 1: Check cache
-    if (!options.forceReanalysis) {
-      const cached = await checkHarmonyCache(trackId);
+    if (!forceReanalysis) {
+      const cached = await checkHarmonyCache({ trackId, audioHash, isrc });
       if (cached) {
         return {
           fingerprint: cached,
@@ -75,7 +90,7 @@ export async function getHarmonicAnalysis(
     }
 
     // Step 2: Check if analysis job already running
-    const existingJob = await getActiveJob(trackId);
+    const existingJob = await getActiveJob({ trackId, audioHash, isrc });
     if (existingJob) {
       return await waitForJob(existingJob.id);
     }
@@ -84,6 +99,8 @@ export async function getHarmonicAnalysis(
     const job = await queueAnalysis({
       track_id: trackId,
       priority: 'normal',
+      audio_hash: audioHash,
+      isrc,
     });
 
     // Step 4: Return provisional data immediately (don't block UI)
@@ -108,26 +125,36 @@ export async function getHarmonicAnalysis(
 /**
  * Queue analysis job (runs in background)
  */
-export async function queueAnalysis(request: AnalysisRequest): Promise<AnalysisJob> {
+export async function queueAnalysis(request: AnalysisJobRequest): Promise<AnalysisJob> {
   const jobId = crypto.randomUUID();
+  const now = new Date().toISOString();
   
   const job: AnalysisJob = {
     id: jobId,
     track_id: request.track_id,
     status: 'queued',
     progress: 0.0,
-    started_at: new Date().toISOString(),
+    started_at: now,
   };
 
-  // TODO: Store job in database
-  // await supabase.from('analysis_jobs').insert(job);
+  const jobPayload = {
+    ...job,
+    analysis_version: ANALYSIS_CONFIG.CURRENT_MODEL_VERSION,
+    audio_hash: request.audio_hash ?? null,
+    isrc: request.isrc ?? null,
+  };
+
+  const { error } = await supabase.from('analysis_jobs').insert(jobPayload);
+  if (error) {
+    console.error('[AnalysisJob] Queue insert error:', error.message);
+  }
 
   // TODO: Trigger Edge Function for async processing
   // await supabase.functions.invoke('analyze-harmony', { body: request });
 
   // For now, simulate async analysis
   setTimeout(() => {
-    runAnalysisJob(job).catch(console.error);
+    runAnalysisJob(job, request).catch(console.error);
   }, 100);
 
   return job;
@@ -137,14 +164,19 @@ export async function queueAnalysis(request: AnalysisRequest): Promise<AnalysisJ
  * Get job status
  */
 export async function getJobStatus(jobId: string): Promise<AnalysisJob | null> {
-  // TODO: Query from database
-  // const { data } = await supabase
-  //   .from('analysis_jobs')
-  //   .select('*')
-  //   .eq('id', jobId)
-  //   .single();
-  
-  return null;
+  const { data, error } = await supabase
+    .from('analysis_jobs')
+    .select('*')
+    .eq('id', jobId)
+    .limit(1);
+
+  if (error) {
+    console.error('[AnalysisJob] Status lookup error:', error.message);
+    return null;
+  }
+
+  const row = data?.[0];
+  return (row as AnalysisJob | undefined) ?? null;
 }
 
 // ============================================================================
@@ -154,42 +186,70 @@ export async function getJobStatus(jobId: string): Promise<AnalysisJob | null> {
 /**
  * Check harmony cache (database lookup)
  */
-async function checkHarmonyCache(trackId: string): Promise<HarmonicFingerprint | null> {
-  try {
-    // TODO: Query from harmonic_fingerprints table
-    // const { data, error } = await supabase
-    //   .from('harmonic_fingerprints')
-    //   .select('*')
-    //   .eq('track_id', trackId)
-    //   .single();
+async function checkHarmonyCache(params: {
+  trackId: string;
+  audioHash?: string;
+  isrc?: string;
+}): Promise<HarmonicFingerprint | null> {
+  const { trackId, audioHash, isrc } = params;
 
-    // if (error || !data) return null;
+  const lookup = async (column: 'audio_hash' | 'isrc' | 'track_id', value: string) => {
+    const { data, error } = await supabase
+      .from('harmonic_fingerprints')
+      .select('*')
+      .eq(column, value)
+      .order('analysis_timestamp', { ascending: false })
+      .limit(1);
 
-    // Check if cache is stale
-    // const cacheAge = Date.now() - new Date(data.analysis_timestamp).getTime();
-    // const maxAge = ANALYSIS_CONFIG.CACHE_TTL_DAYS * 24 * 60 * 60 * 1000;
-    // if (cacheAge > maxAge) return null;
+    if (error) {
+      console.error('[HarmonyCache] Lookup error:', error.message);
+      return null;
+    }
 
-    // return data as HarmonicFingerprint;
-    
-    // TEMPORARY: Return null until database schema is ready
-    return null;
-  } catch (error) {
-    console.error('[HarmonyCache] Lookup error:', error);
-    return null;
+    return (data?.[0] as HarmonicFingerprint | undefined) ?? null;
+  };
+
+  const candidates = [
+    audioHash ? await lookup('audio_hash', audioHash) : null,
+    isrc ? await lookup('isrc', isrc) : null,
+    await lookup('track_id', trackId),
+  ];
+
+  for (const cached of candidates) {
+    if (!cached) continue;
+    const timestamp = cached.analysis_timestamp;
+
+    if (!withinWindow(timestamp, REANALYZE_MS)) {
+      continue; // Eligible for reanalysis; treat as cache miss
+    }
+
+    if (!withinWindow(timestamp, TTL_MS)) {
+      continue; // Stale for reuse window
+    }
+
+    return cached;
   }
+
+  return null;
 }
 
 /**
  * Store analysis result in cache
  */
-async function storeInCache(fingerprint: HarmonicFingerprint): Promise<void> {
+async function storeInCache(
+  fingerprint: HarmonicFingerprint & Partial<{ audio_hash: string | null; isrc: string | null }>
+): Promise<void> {
   try {
-    // TODO: Upsert to harmonic_fingerprints table
-    // await supabase
-    //   .from('harmonic_fingerprints')
-    //   .upsert(fingerprint, { onConflict: 'track_id' });
-    
+    const onConflict = fingerprint.audio_hash ? 'audio_hash' : 'track_id';
+
+    const { error } = await supabase
+      .from('harmonic_fingerprints')
+      .upsert(fingerprint, { onConflict });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
     console.log('[HarmonyCache] Stored fingerprint:', fingerprint.track_id);
   } catch (error) {
     console.error('[HarmonyCache] Storage error:', error);
@@ -203,44 +263,73 @@ async function storeInCache(fingerprint: HarmonicFingerprint): Promise<void> {
 /**
  * Run actual audio analysis (ML model)
  */
-async function runAnalysisJob(job: AnalysisJob): Promise<AnalysisResult> {
+async function runAnalysisJob(job: AnalysisJob, request?: AnalysisJobRequest): Promise<AnalysisResult> {
   const startTime = Date.now();
+  const touch = async (patch: Record<string, unknown>) => {
+    const { error } = await supabase
+      .from('analysis_jobs')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', job.id);
+
+    if (error) {
+      console.error('[AnalysisJob] Update error:', error.message);
+    }
+  };
   
   try {
     // Update status
     job.status = 'processing';
     job.progress = 0.1;
+    await touch({ status: job.status, progress: job.progress });
 
     // TODO: Fetch audio file
     job.progress = 0.3;
+    await touch({ progress: job.progress });
 
     // TODO: Extract chroma features
     job.progress = 0.5;
+    await touch({ progress: job.progress });
 
     // TODO: Detect key and mode
     job.progress = 0.7;
+    await touch({ progress: job.progress });
 
     // TODO: Identify chord progression
     job.progress = 0.9;
+    await touch({ progress: job.progress });
 
     // TEMPORARY: Mock result for demonstration
     const mockResult = createMockAnalysis(job.track_id);
+    const fingerprintToStore = {
+      ...mockResult.fingerprint,
+      audio_hash: request?.audio_hash ?? null,
+      isrc: request?.isrc ?? null,
+    };
     
     // Store result
-    await storeInCache(mockResult.fingerprint);
+    await storeInCache(fingerprintToStore);
     
     job.status = 'completed';
     job.progress = 1.0;
     job.completed_at = new Date().toISOString();
     job.result = mockResult.fingerprint;
 
+    await touch({
+      status: job.status,
+      progress: job.progress,
+      completed_at: job.completed_at,
+      result: fingerprintToStore,
+    });
+
     return {
       ...mockResult,
+      fingerprint: fingerprintToStore,
       processing_time_ms: Date.now() - startTime,
     };
   } catch (error) {
     job.status = 'failed';
     job.error_message = error instanceof Error ? error.message : 'Unknown error';
+    await touch({ status: job.status, error_message: job.error_message });
     throw error;
   }
 }
@@ -336,18 +425,37 @@ function createProvisionalFingerprint(trackId: string): HarmonicFingerprint {
 /**
  * Get active job for track (if any)
  */
-async function getActiveJob(trackId: string): Promise<AnalysisJob | null> {
-  // TODO: Query from database
-  // const { data } = await supabase
-  //   .from('analysis_jobs')
-  //   .select('*')
-  //   .eq('track_id', trackId)
-  //   .in('status', ['queued', 'processing'])
-  //   .order('started_at', { ascending: false })
-  //   .limit(1)
-  //   .single();
-  
-  return null;
+async function getActiveJob(params: {
+  trackId: string;
+  audioHash?: string;
+  isrc?: string;
+}): Promise<AnalysisJob | null> {
+  const { trackId, audioHash, isrc } = params;
+
+  const search = async (column: 'audio_hash' | 'isrc' | 'track_id', value: string) => {
+    const { data, error } = await supabase
+      .from('analysis_jobs')
+      .select('*')
+      .eq(column, value)
+      .in('status', ['queued', 'processing'])
+      .order('started_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('[AnalysisJob] Active lookup error:', error.message);
+      return null;
+    }
+
+    return (data?.[0] as AnalysisJob | undefined) ?? null;
+  };
+
+  const candidates = [
+    audioHash ? await search('audio_hash', audioHash) : null,
+    isrc ? await search('isrc', isrc) : null,
+    await search('track_id', trackId),
+  ];
+
+  return candidates.find(Boolean) ?? null;
 }
 
 /**

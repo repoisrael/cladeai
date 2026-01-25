@@ -537,6 +537,126 @@ export type Database = {
         }
         Relationships: []
       }
+      harmonic_fingerprints: {
+        Row: {
+          analysis_timestamp: string
+          analysis_version: string
+          audio_hash: string | null
+          borrowed_chords: Json | null
+          cadence_type: string
+          confidence_score: number
+          created_at: string
+          detected_key: string | null
+          detected_mode: string | null
+          id: string
+          is_provisional: boolean
+          isrc: string | null
+          loop_length_bars: number
+          modal_color: string | null
+          reanalyze_after: string
+          reuse_until: string
+          roman_progression: Json
+          section_progressions: Json | null
+          tonal_center: Json
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_timestamp?: string
+          analysis_version: string
+          audio_hash?: string | null
+          borrowed_chords?: Json | null
+          cadence_type: string
+          confidence_score: number
+          created_at?: string
+          detected_key?: string | null
+          detected_mode?: string | null
+          id?: string
+          is_provisional?: boolean
+          isrc?: string | null
+          loop_length_bars?: number
+          modal_color?: string | null
+          reanalyze_after?: string
+          reuse_until?: string
+          roman_progression?: Json
+          section_progressions?: Json | null
+          tonal_center: Json
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_timestamp?: string
+          analysis_version?: string
+          audio_hash?: string | null
+          borrowed_chords?: Json | null
+          cadence_type?: string
+          confidence_score?: number
+          created_at?: string
+          detected_key?: string | null
+          detected_mode?: string | null
+          id?: string
+          is_provisional?: boolean
+          isrc?: string | null
+          loop_length_bars?: number
+          modal_color?: string | null
+          reanalyze_after?: string
+          reuse_until?: string
+          roman_progression?: Json
+          section_progressions?: Json | null
+          tonal_center?: Json
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      analysis_jobs: {
+        Row: {
+          analysis_version: string
+          audio_hash: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          isrc: string | null
+          progress: number
+          result: Json | null
+          started_at: string
+          status: string
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_version: string
+          audio_hash?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          isrc?: string | null
+          progress?: number
+          result?: Json | null
+          started_at?: string
+          status: string
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_version?: string
+          audio_hash?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          isrc?: string | null
+          progress?: number
+          result?: Json | null
+          started_at?: string
+          status?: string
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
