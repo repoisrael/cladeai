@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { usePlayer } from './PlayerContext';
 import { YouTubePlayer } from './providers/YouTubePlayer';
 import { SpotifyEmbedPreview } from './providers/SpotifyEmbedPreview';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Maximize2, X, Menu, ChevronDown, ChevronUp } from 'lucide-react';
+import { Volume2, VolumeX, Maximize2, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const providerMeta = {
@@ -165,7 +165,7 @@ export function EmbeddedPlayerDrawer() {
         </div>
 
         {/* Embeds are rendered once at the root to avoid duplicates; see shared container below */}
-      </div>
+      </motion.div>
 
       {/* Desktop Player - Bottom bar */}
       <div
@@ -221,6 +221,6 @@ export function EmbeddedPlayerDrawer() {
           )
         ) : null}
       </div>
-    </div>
+    </>
   );
 }
