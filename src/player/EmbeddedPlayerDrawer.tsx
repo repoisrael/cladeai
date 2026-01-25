@@ -83,102 +83,54 @@ export function EmbeddedPlayerDrawer() {
   if (!isOpen || !provider || !trackId) return null;
 
   return (
-    <div
-      id="universal-player"
-      data-player="universal"
-      className="z-[120] md:sticky md:top-0 md:left-1/2 md:-translate-x-1/2 md:max-w-5xl md:w-full md:px-4"
-      style={{ transform: 'translateX(-50%)' }}
-    >
-      {/* Mobile Player - Top-right compact strip */}
-      <div
-        className={cn(
-          'fixed z-[60] md:hidden',
-          'flex flex-col gap-2 p-3 rounded-xl backdrop-blur-xl shadow-2xl border border-white/10',
-          meta.color,
-          isMinimized
-            ? 'top-4 right-4 w-64'
-            : 'top-4 left-4 right-4 w-[calc(100vw-2rem)]'
-        )}
-        style={{
-          paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
-        }}
-        role="region"
-        aria-label="Now Playing"
+    <>
+      {/* Single Interchangeable Player - EXACT same position for Spotify & YouTube */}
+      <motion.div
+        drag={isMinimized ? "y" : false}
+        dragConstraints={{ top: 0, bottom: 200 }}
+        dragElastic={0.1}
+        initial={{ y: 48, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 48, opacity: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="pointer-events-auto fixed bottom-16 md:bottom-0 left-0 right-0 md:left-auto md:right-4 z-[100] md:pb-20 w-full md:w-[360px] md:max-w-[360px] px-2 md:px-0"
       >
-        {/* Header with title and close */}
-        <div className="flex items-center gap-2">
-          <span className="text-xl select-none shrink-0" aria-label={meta.label}>{meta.badge}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate" title={trackTitle ?? 'Now Playing'}>
-              {trackTitle ?? 'Now Playing'}
-            </p>
-            {trackArtist && (
-              <p className="text-xs text-white/70 truncate" title={trackArtist}>
-                {trackArtist}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setMinimized(!isMinimized)}
-            className="shrink-0 text-white/80 hover:text-white p-1 rounded transition-colors"
-            aria-label={isMinimized ? 'Expand player' : 'Minimize player'}
-          >
-            <ChevronsDownUp className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={closePlayer}
-            className="shrink-0 text-white/80 hover:text-white p-1 rounded transition-colors"
-            aria-label="Close player"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {!isMinimized && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-white/70 tabular-nums">{formatTime(currentTime)}</span>
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer 
-                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
-                       [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full 
-                       [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer"
-              aria-label="Seek"
-            />
-            <span className="text-xs text-white/70 tabular-nums">{formatTime(duration)}</span>
-          </div>
-        )}
-
-        {/* Playback controls */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={previousTrack}
-              className="p-2 text-white/80 hover:text-white transition-colors rounded"
-              aria-label="Previous track"
-            >
-              <SkipBack className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="p-2 text-white bg-white/20 hover:bg-white/30 transition-colors rounded-full"
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-            </button>
-            <button
-              onClick={nextTrack}
-              className="p-2 text-white/80 hover:text-white transition-colors rounded"
-              aria-label="Next track"
-            >
-              <SkipForward className="w-4 h-4" />
-            </button>
+        <div className={`overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br ${meta.color} shadow-2xl backdrop-blur-xl`}>
+          {/* Header - Always visible, compact on mobile */}
+          <div className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-background/80 backdrop-blur">
+            <span className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-background/80 text-lg md:text-xl shadow-inner">
+              {meta.badge}
+            </span>
+            <div className="flex flex-col leading-tight flex-1 min-w-0">
+              <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Now Playing</span>
+              <span className="text-xs md:text-sm font-bold text-foreground truncate">{meta.label}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setQueueOpen(true)}
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                aria-label="View queue"
+              >
+                <Menu className="h-3 w-3 md:h-4 md:w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                aria-label={isMinimized ? 'Expand player' : 'Minimize player'}
+              >
+                {isMinimized ? <ChevronUp className="h-3 w-3 md:h-4 md:w-4" /> : <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={closePlayer}
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                aria-label="Close player"
+              >
+                <X className="h-3 w-3 md:h-4 md:w-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-1">
