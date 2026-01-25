@@ -36,7 +36,13 @@ type OpenPlayerPayload = {
 interface PlayerContextValue extends PlayerState {
   readonly isOpen: boolean;
   openPlayer: (payload: OpenPlayerPayload) => void;
-  closePlayer: () => void;
+  /** High-level play API: canonicalTrackId may be the app track id (optional), provider selects the provider, providerTrackId is the provider-specific id, startSec optional */
+  play: (canonicalTrackId: string | null, provider: MusicProvider, providerTrackId?: string | null, startSec?: number) => void;
+  pause: () => void;
+  stop: () => void;
+  closeSpotify: () => void;
+  closeYoutube: () => void;
+>>>>>>> Stashed changes
   switchProvider: (provider: MusicProvider, providerTrackId: string | null, canonicalTrackId?: string | null) => void;
   seekTo: (sec: number) => void;
   clearSeek: () => void;
@@ -216,66 +222,51 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const openPlayer = useCallback((payload: OpenPlayerPayload) => {
-    setState((prev) => ({
-      ...prev,
-      provider: payload.provider,
-      trackId: payload.providerTrackId,
-      canonicalTrackId: payload.canonicalTrackId ?? prev.canonicalTrackId,
-      trackTitle: payload.title ?? prev.trackTitle,
-      trackArtist: payload.artist ?? prev.trackArtist,
-      seekToSec: payload.startSec ?? null,
-    }));
+  // High-level play/pause/stop helpers
+  const play = useCallback((canonicalTrackId: string | null, provider: MusicProvider, providerTrackId?: string | null, startSec?: number) => {
+    setState((prev) => {
+      const updates: Partial<PlayerState> = {
+        canonicalTrackId: canonicalTrackId ?? prev.canonicalTrackId,
+        seekToSec: startSec ?? null,
+      };
 
-    if (payload.canonicalTrackId) {
-      recordPlayEvent({
-        track_id: payload.canonicalTrackId,
-        provider: payload.provider,
-        action: 'preview',
-        context: payload.context ?? 'player',
-      }).catch((err) => {
-        console.error('Failed to record play event', err);
-      });
+      if (provider === 'spotify') {
+        updates.spotifyOpen = true;
+        updates.spotifyTrackId = providerTrackId ?? prev.spotifyTrackId;
+        updates.autoplaySpotify = true;
+        updates.youtubeOpen = false;
+        updates.autoplayYoutube = false;
+      } else {
+        updates.youtubeOpen = true;
+        updates.youtubeTrackId = providerTrackId ?? prev.youtubeTrackId;
+        updates.autoplayYoutube = true;
+        updates.spotifyOpen = false;
+        updates.autoplaySpotify = false;
+      }
+
+      updates.isPlaying = true;
+
+      return { ...prev, ...updates };
+    });
+
+    if (canonicalTrackId) {
+      recordPlayEvent({ track_id: canonicalTrackId, provider, action: 'preview', context: 'player' }).catch((err) => console.error('Failed to record play event', err));
     }
   }, []);
 
-  const closePlayer = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      provider: null,
-      trackId: null,
-      isPlaying: false,
-    }));
+  const pause = useCallback(() => {
+    setState((prev) => ({ ...prev, isPlaying: false, autoplaySpotify: false, autoplayYoutube: false }));
   }, []);
 
-  const switchProvider = useCallback((provider: MusicProvider, providerTrackId: string | null, canonicalTrackId?: string | null) => {
-    setState((prev) => ({
-      ...prev,
-      provider,
-      trackId: providerTrackId,
-      canonicalTrackId: canonicalTrackId ?? prev.canonicalTrackId,
-      seekToSec: null,
-    }));
-
-    const trackIdToLog = canonicalTrackId ?? state.canonicalTrackId;
-    if (trackIdToLog) {
-      recordPlayEvent({
-        track_id: trackIdToLog,
-        provider,
-        action: 'preview',
-        context: 'provider-switch',
-      }).catch((err) => {
-        console.error('Failed to record provider switch event', err);
-      });
-    }
-  }, [state.canonicalTrackId]);
+  const stop = useCallback(() => {
+    setState((prev) => ({ ...prev, isPlaying: false, spotifyOpen: false, youtubeOpen: false, spotifyTrackId: null, youtubeTrackId: null, canonicalTrackId: null, autoplaySpotify: false, autoplayYoutube: false, seekToSec: null }));
+  }, []);
 
   const value = useMemo<PlayerContextValue>(() => ({
     ...state,
-    isOpen: !!state.provider && !!state.trackId,
-    openPlayer,
-    closePlayer,
-    switchProvider,
+    play,
+    pause,
+    stop,
     seekTo,
     clearSeek,
     setCurrentSection,
@@ -291,6 +282,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     previousTrack,
   }), [state, openPlayer, closePlayer, switchProvider, seekTo, clearSeek, setCurrentSection, setIsPlaying, setMinimized, addToQueue, playFromQueue, removeFromQueue, reorderQueue, clearQueue, shuffleQueue, nextTrack, previousTrack]);
 
+<<<<<<< Updated upstream
   // Expose debug state in dev/test only for Playwright provider-atomicity assertions
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -326,6 +318,77 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       console.error('Failed to toggle player body class', err);
     }
   }, [isOpen]);
+=======
+        if (payload.provider === 'spotify') {
+          updates.spotifyOpen = true;
+          updates.spotifyTrackId = payload.providerTrackId;
+          updates.autoplaySpotify = payload.autoplay ?? true;
+          updates.youtubeOpen = false;
+          updates.autoplayYoutube = false;
+        } else {
+          updates.youtubeOpen = true;
+          updates.youtubeTrackId = payload.providerTrackId;
+          updates.autoplayYoutube = payload.autoplay ?? true;
+          updates.spotifyOpen = false;
+          updates.autoplaySpotify = false;
+        }
+
+        // mark playback active when opening a provider
+        updates.isPlaying = true;
+
+        return { ...prev, ...updates };
+      });
+
+      if (payload.canonicalTrackId) {
+        recordPlayEvent({
+          track_id: payload.canonicalTrackId,
+          provider: payload.provider,
+          action: 'preview',
+          context: payload.context ?? 'player',
+        }).catch((err) => {
+          console.error('Failed to record play event', err);
+        });
+      }
+    },
+    closeSpotify: () => setState((prev) => ({ ...prev, spotifyOpen: false, autoplaySpotify: false })),
+    closeYoutube: () => setState((prev) => ({ ...prev, youtubeOpen: false, autoplayYoutube: false })),
+    switchProvider: (provider, providerTrackId, canonicalTrackId) => {
+      setState((prev) => {
+        const updates: Partial<PlayerState> = {
+          canonicalTrackId: canonicalTrackId ?? prev.canonicalTrackId,
+          seekToSec: null,
+        };
+
+        if (provider === 'spotify') {
+          updates.spotifyOpen = true;
+          updates.spotifyTrackId = providerTrackId;
+          updates.autoplaySpotify = true;
+          updates.youtubeOpen = false;
+          updates.autoplayYoutube = false;
+        } else {
+          updates.youtubeOpen = true;
+          updates.youtubeTrackId = providerTrackId;
+          updates.autoplayYoutube = true;
+          updates.spotifyOpen = false;
+          updates.autoplaySpotify = false;
+        }
+
+        return { ...prev, ...updates };
+      });
+
+      const trackIdToLog = canonicalTrackId ?? state.canonicalTrackId;
+      if (trackIdToLog) {
+        recordPlayEvent({
+          track_id: trackIdToLog,
+          provider,
+          action: 'preview',
+          context: 'provider-switch',
+        }).catch((err) => {
+          console.error('Failed to record provider switch event', err);
+        });
+      }
+    },
+  }), [state, play, pause, stop, seekTo, clearSeek, setCurrentSection, setIsPlaying, addToQueue, playFromQueue, removeFromQueue, reorderQueue, clearQueue, shuffleQueue, nextTrack, previousTrack]);
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }
