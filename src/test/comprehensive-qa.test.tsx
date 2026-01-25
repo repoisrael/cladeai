@@ -134,13 +134,14 @@ describe('Mobile Player QA', () => {
 
     it('should switch between Spotify and YouTube', async () => {
       mockPlayerContext.provider = 'spotify';
-      render(<EmbeddedPlayerDrawer />, { wrapper });
+      const { container, rerender } = render(<EmbeddedPlayerDrawer />, { wrapper });
+      expect(container.querySelectorAll('[data-player="universal"]').length).toBe(1);
 
       mockPlayerContext.provider = 'youtube';
       mockPlayerContext.trackId = 'youtube123';
-      render(<EmbeddedPlayerDrawer />, { wrapper });
+      rerender(<EmbeddedPlayerDrawer />);
 
-      expect(mockPlayerContext.switchProvider).not.toBeUndefined();
+      expect(container.querySelectorAll('[data-player="universal"]').length).toBe(1);
     });
 
     it('should have proper z-index hierarchy', () => {
