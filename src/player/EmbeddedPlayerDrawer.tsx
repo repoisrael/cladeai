@@ -1,8 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { usePlayer } from './PlayerContext';
 import { YouTubePlayer } from './providers/YouTubePlayer';
 import { SpotifyEmbedPreview } from './providers/SpotifyEmbedPreview';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Maximize2, X, ChevronsDownUp } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Maximize2, X, Menu, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const providerMeta = {
@@ -80,7 +81,7 @@ export function EmbeddedPlayerDrawer() {
     }
   }, []);
 
-  if (!isOpen || !provider || !trackId) return null;
+  const isIdle = !isOpen || !provider || !trackId;
 
   return (
     <>
@@ -106,14 +107,6 @@ export function EmbeddedPlayerDrawer() {
               <span className="text-xs md:text-sm font-bold text-foreground truncate">{meta.label}</span>
             </div>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setQueueOpen(true)}
-                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
-                aria-label="View queue"
-              >
-                <Menu className="h-3 w-3 md:h-4 md:w-4" />
-              </button>
               <button
                 type="button"
                 onClick={() => setIsMinimized(!isMinimized)}
@@ -194,9 +187,9 @@ export function EmbeddedPlayerDrawer() {
         <div className="flex flex-row items-center w-full max-w-lg mx-auto px-2 gap-2">
           <span className="text-xl select-none" aria-label={meta.label}>{meta.badge}</span>
           <span className="flex-1 truncate text-sm font-semibold text-white" title={trackTitle ?? 'Now Playing'}>
-            {trackTitle ?? 'Now Playing'}
+            {trackTitle ?? (isIdle ? 'Player ready — pick a track' : 'Now Playing')}
           </span>
-          {trackArtist && (
+          {trackArtist && !isIdle && (
             <span className="text-xs text-white/70 truncate" title={trackArtist}>
               {trackArtist}
             </span>
@@ -220,11 +213,13 @@ export function EmbeddedPlayerDrawer() {
         )}
         aria-hidden
       >
-        {provider === 'spotify' ? (
-          <SpotifyEmbedPreview providerTrackId={trackId} autoplay={autoplay} />
-        ) : (
-          <YouTubePlayer providerTrackId={trackId} autoplay={autoplay} />
-        )}
+        {provider && trackId ? (
+          provider === 'spotify' ? (
+            <SpotifyEmbedPreview providerTrackId={trackId} autoplay={autoplay} />
+          ) : (
+            <YouTubePlayer providerTrackId={trackId} autoplay={autoplay} />
+          )
+        ) : null}
       </div>
     </div>
   );
