@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Send, Heart, Reply, Edit2, Trash2, MoreVertical } from 'lucide-react';
+import { MessageSquare, Send, Heart, Reply, Edit2, Trash2, MoreVertical, UserPlus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar } from '@/components/ui/avatar';
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +38,8 @@ interface TrackCommentsProps {
 }
 
 export function TrackComments({ trackId, className = '' }: TrackCommentsProps) {
-  const { user } = useAuth();
+  const { user, guestMode } = useAuth();
+  const navigate = useNavigate();
   const [comments, setComments] = useState<TrackComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isPosting, setIsPosting] = useState(false);
@@ -427,12 +429,49 @@ export function TrackComments({ trackId, className = '' }: TrackCommentsProps) {
           </div>
         </form>
       ) : (
-        <div className="glass rounded-lg p-6 text-center">
-          <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <p className="text-sm text-muted-foreground">
-            Sign in to share your thoughts on this track
-          </p>
-        </div>
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="relative overflow-hidden rounded-xl border-2 border-dashed border-border/50 bg-gradient-to-br from-background via-background to-muted/20 p-8 text-center"
+        >
+          {/* Animated background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#00F5FF]/5 via-[#FF00FF]/5 to-[#00F5FF]/5 animate-pulse" />
+          
+          {/* Content */}
+          <div className="relative z-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#00F5FF] to-[#FF00FF] mb-4">
+              <MessageSquare className="w-8 h-8 text-white" />
+            </div>
+            
+            <h4 className="text-lg font-semibold mb-2 flex items-center justify-center gap-2">
+              Join the Conversation
+              <Sparkles className="w-4 h-4 text-[#FF00FF]" />
+            </h4>
+            
+            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+              Sign up to share your thoughts, reply to others, and connect with music lovers who get it
+            </p>
+            
+            <Button
+              size="lg"
+              onClick={() => navigate('/auth')}
+              className="bg-gradient-to-r from-[#00F5FF] to-[#FF00FF] hover:opacity-90 transition-opacity shadow-lg shadow-[#00F5FF]/20"
+            >
+              <UserPlus className="w-5 h-5 mr-2" />
+              Sign Up to Comment
+            </Button>
+            
+            <p className="text-xs text-muted-foreground mt-4">
+              Already have an account?{' '}
+              <button
+                onClick={() => navigate('/auth')}
+                className="text-[#00F5FF] hover:underline font-medium"
+              >
+                Sign in
+              </button>
+            </p>
+          </div>
+        </motion.div>
       )}
 
       {/* Comments list */}
