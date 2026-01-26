@@ -866,33 +866,32 @@ export default function ProfilePage() {
                 </TabsContent>
               )}
 
-              <TabsContent value="artists" className="mt-4">
-                <ResponsiveGrid cols={{ sm: 1, md: 2, lg: 3 }} gap="sm">
-                {topArtists.map((artist, i) => (
-                  <div key={artist.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30">
-                    <span className="w-6 text-center text-muted-foreground text-sm">{i + 1}</span>
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
-                      {artist.images?.[0]?.url ? (
-                        <img src={artist.images[0].url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
+              {topArtists.length > 0 && (
+                <TabsContent value="artists" className="mt-4">
+                  <ResponsiveGrid cols={{ sm: 1, md: 2, lg: 3 }} gap="sm">
+                  {topArtists.map((artist, i) => (
+                    <div key={artist.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30">
+                      <span className="w-6 text-center text-muted-foreground text-sm">{i + 1}</span>
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
+                        {artist.images?.[0]?.url ? (
+                          <img src={artist.images[0].url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{artist.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {artist.genres?.slice(0, 2).join(', ')}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{artist.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {artist.genres?.slice(0, 2).join(', ')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                </ResponsiveGrid>
-                {topArtists.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">No top artists yet. Start listening!</p>
-                )}
-              </TabsContent>
+                  ))}
+                  </ResponsiveGrid>
+                </TabsContent>
+              )}
 
               <TabsContent value="recent" className="mt-4">
                 <ResponsiveGrid cols={{ sm: 1, md: 2, lg: 3 }} gap="sm">
