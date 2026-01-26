@@ -446,67 +446,6 @@ async function runAnalysisJob(job: AnalysisJob, request?: AnalysisJobRequest): P
 }
 
 /**
- * Mock analysis (placeholder until ML model integrated)
- */
-function createMockAnalysis(trackId: string): AnalysisResult {
-  // Common progressions for testing
-  const commonProgressions: RomanChord[][] = [
-    [
-      { numeral: 'I', quality: 'major' },
-      { numeral: 'V', quality: 'major' },
-      { numeral: 'vi', quality: 'minor' },
-      { numeral: 'IV', quality: 'major' },
-    ],
-    [
-      { numeral: 'i', quality: 'minor' },
-      { numeral: 'VI', quality: 'major' },
-      { numeral: 'III', quality: 'major' },
-      { numeral: 'VII', quality: 'major' },
-    ],
-    [
-      { numeral: 'I', quality: 'major' },
-      { numeral: 'IV', quality: 'major' },
-      { numeral: 'V', quality: 'major' },
-    ],
-  ];
-
-  const progression = commonProgressions[Math.floor(Math.random() * commonProgressions.length)];
-  
-  const tonalCenter: RelativeTonalCenter = {
-    root_interval: 0,
-    mode: 'major',
-    stability_score: 0.85,
-  };
-
-  const fingerprint: HarmonicFingerprint = {
-    track_id: trackId,
-    tonal_center: tonalCenter,
-    roman_progression: progression,
-    loop_length_bars: 4,
-    cadence_type: 'authentic',
-    confidence_score: 0.65,
-    analysis_timestamp: new Date().toISOString(),
-    analysis_version: ANALYSIS_CONFIG.CURRENT_MODEL_VERSION,
-    is_provisional: true, // Mark as provisional until real analysis
-    detected_key: 'C',
-    detected_mode: 'major',
-  };
-
-  return {
-    fingerprint,
-    confidence: {
-      overall: 0.65,
-      key_detection: 0.7,
-      chord_detection: 0.6,
-      structure_detection: 0.65,
-      tempo_detection: 0.7,
-    },
-    method: 'ml_audio',
-    processing_time_ms: 0,
-  };
-}
-
-/**
  * Create provisional fingerprint (instant response)
  */
 function createProvisionalFingerprint(trackId: string): HarmonicFingerprint {
