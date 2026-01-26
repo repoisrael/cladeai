@@ -185,6 +185,14 @@ export function EmbeddedPlayerDrawer() {
               </button>
               <button
                 type="button"
+                onClick={closePlayer}
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                aria-label="Close player"
+              >
+                <X className="h-3 w-3 md:h-4 md:w-4" />
+              </button>
+              <button
+                type="button"
                 onClick={() => setMinimized(!isMinimized)}
                 className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
                 aria-label={isMinimized ? 'Expand player' : 'Minimize player'}
