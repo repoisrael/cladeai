@@ -231,6 +231,69 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const togglePlayPause = useCallback(() => {
+    setState((prev) => {
+      const activeProvider = prev.provider;
+      const controls = activeProvider ? providerControlsRef.current[activeProvider] : undefined;
+      if (!controls) return prev;
+
+      if (prev.isPlaying) {
+        controls.pause?.();
+        return {
+          ...prev,
+          isPlaying: false,
+          autoplaySpotify: false,
+          autoplayYoutube: false,
+        };
+      }
+
+      controls.play?.(prev.seekToSec ?? null);
+      return {
+        ...prev,
+        isPlaying: true,
+        autoplaySpotify: activeProvider === 'spotify',
+        autoplayYoutube: activeProvider === 'youtube',
+      };
+    });
+  }, []);
+
+  const registerProviderControls = useCallback((provider: MusicProvider, controls: ProviderControls) => {
+    providerControlsRef.current[provider] = controls;
+  }, []);
+
+  const updatePlaybackState = useCallback((updates: Partial<Pick<PlayerState, 'positionMs' | 'durationMs' | 'isPlaying' | 'volume' | 'isMuted' | 'trackTitle' | 'trackArtist' | 'trackAlbum' | 'lastKnownTitle' | 'lastKnownArtist' | 'lastKnownAlbum'>>) => {
+    setState((prev) => {
+      const next: PlayerState = { ...prev };
+
+      if (updates.positionMs !== undefined) next.positionMs = Math.max(0, updates.positionMs);
+      if (updates.durationMs !== undefined) next.durationMs = Math.max(updates.durationMs, 0);
+      if (updates.isPlaying !== undefined) next.isPlaying = updates.isPlaying;
+      if (updates.volume !== undefined) next.volume = clamp01(updates.volume);
+      if (updates.isMuted !== undefined) next.isMuted = updates.isMuted;
+
+      const title = updates.trackTitle ?? prev.trackTitle ?? prev.lastKnownTitle;
+      if (title) {
+        next.trackTitle = title;
+        next.lastKnownTitle = title;
+      }
+
+      const artistInput = updates.trackArtist ?? prev.trackArtist ?? prev.lastKnownArtist;
+      const dedupedArtist = dedupeArtists(artistInput);
+      if (dedupedArtist) {
+        next.trackArtist = dedupedArtist;
+        next.lastKnownArtist = dedupedArtist;
+      }
+
+      const album = updates.trackAlbum ?? prev.trackAlbum ?? prev.lastKnownAlbum;
+      if (album) {
+        next.trackAlbum = album;
+        next.lastKnownAlbum = album;
+      }
+
+      return next;
+    });
+  }, []);
+
   const setMinimized = useCallback((value: boolean) => {
     setState((prev) => ({ ...prev, isMinimized: value }));
   }, []);
