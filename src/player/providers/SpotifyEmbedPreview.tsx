@@ -158,15 +158,16 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
         const player = getOrCreatePlayer(token, initialVolume);
 
         if (!spotifyListenersAttached) {
-          player.addListener('ready', ({ device_id }) => {
+          player.addListener('ready', async ({ device_id }) => {
             spotifyDeviceId = device_id;
             deviceIdRef.current = device_id;
             setReady(true);
             console.log('[Spotify] READY device:', device_id);
             void logActiveDevice(token);
-            void transferPlayback(device_id, token, autoplay ?? autoplaySpotify);
-            if (providerTrackId) {
-              void startPlayback(device_id, token, providerTrackId, seekToSec ?? 0);
+            const shouldPlay = autoplay ?? autoplaySpotify ?? true;
+            const transferred = await transferPlayback(device_id, token, shouldPlay);
+            if (transferred && providerTrackId) {
+              await startPlayback(device_id, token, providerTrackId, seekToSec ?? 0);
             }
           });
 
@@ -208,8 +209,8 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
             const tokenVal = tokenRef.current;
             const device = deviceIdRef.current;
             if (!tokenVal || !device) return;
-            await transferPlayback(device, tokenVal, true);
-            if (providerTrackId) {
+            const transferred = await transferPlayback(device, tokenVal, true);
+            if (transferred && providerTrackId) {
               await startPlayback(device, tokenVal, providerTrackId, startSec ?? 0);
             }
           },
@@ -273,8 +274,12 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
     if (!token || !device) return;
 
     const shouldPlay = autoplay ?? autoplaySpotify ?? false;
-    void transferPlayback(device, token, shouldPlay);
-    void startPlayback(device, token, providerTrackId, seekToSec ?? 0);
+    if (!shouldPlay) return;
+    void transferPlayback(device, token, true).then((transferred) => {
+      if (transferred) {
+        void startPlayback(device, token, providerTrackId, seekToSec ?? 0);
+      }
+    });
     
     // Ensure audible volume after transfer
     if (playerRef.current && !isMuted) {
@@ -302,11 +307,14 @@ async function transferPlayback(deviceId: string, token: string, play: boolean) 
     });
     if (!res.ok) {
       console.warn(`[Spotify] Transfer failed: ${res.status} ${res.statusText}`);
+      return false;
     } else {
       console.log('[Spotify] Transfer successful, play:', play);
     }
+    return true;
   } catch (err) {
     console.error('[Spotify] Failed to transfer playback', err);
+    return false;
   }
 }
 
