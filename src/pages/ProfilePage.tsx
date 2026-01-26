@@ -134,6 +134,7 @@ export default function ProfilePage() {
   const { openPlayer } = usePlayer();
 
   const spotifyConnected = isSpotifyConnected === true;
+  const defaultTab = topTracks.length > 0 ? 'tracks' : topArtists.length > 0 ? 'artists' : 'recent';
   const lastFmConnected = !!lastFmUsername;
   const likesCount = interactionStats?.likes ?? 0;
   const savesCount = interactionStats?.saves ?? 0;
@@ -831,7 +832,7 @@ export default function ProfilePage() {
               </select>
             </div>
 
-            <Tabs defaultValue="tracks" className="w-full">
+            <Tabs defaultValue={defaultTab} value={defaultTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="tracks" disabled={!topTracks.length}>Top Tracks</TabsTrigger>
                 <TabsTrigger value="artists" disabled={!topArtists.length}>Top Artists</TabsTrigger>
