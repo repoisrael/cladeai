@@ -11,6 +11,8 @@ import { QueueProvider } from "@/contexts/QueueContext";
 import { EmbeddedPlayerDrawer } from "@/player/EmbeddedPlayerDrawer";
 import { LoadingSpinner } from "@/components/shared";
 import { AdminRoute } from "@/components/AdminRoute";
+import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index")); // Landing Page
@@ -54,6 +56,14 @@ const PageLoader = () => (
     <LoadingSpinner size="lg" />
   </div>
 );
+
+const PlayerVisibilityGate = () => {
+  const location = useLocation();
+  const { user } = useAuth();
+  const onLanding = location.pathname === '/' || location.pathname === '';
+  if (!user && onLanding) return null;
+  return <EmbeddedPlayerDrawer />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -101,7 +111,7 @@ const App = () => (
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
-                <EmbeddedPlayerDrawer />
+                <PlayerVisibilityGate />
               </BrowserRouter>
             </QueueProvider>
         </PlayerProvider>
