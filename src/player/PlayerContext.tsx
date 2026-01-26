@@ -410,6 +410,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   // High-level play/pause/stop helpers
   const play = useCallback((canonicalTrackId: string | null, provider: MusicProvider, providerTrackId?: string | null, startSec?: number) => {
+    const prevProvider = state.provider;
+    if (prevProvider && prevProvider !== provider) {
+      providerControlsRef.current[prevProvider]?.pause?.();
+      providerControlsRef.current[prevProvider]?.setMute?.(true);
+      providerControlsRef.current[prevProvider]?.teardown?.();
+    }
+
     setState((prev) => {
       const updates: Partial<PlayerState> = {
         canonicalTrackId: canonicalTrackId ?? prev.canonicalTrackId,
@@ -417,11 +424,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         provider,
         trackId: providerTrackId ?? prev.trackId,
         trackTitle: prev.trackTitle ?? prev.lastKnownTitle,
-        trackArtist: prev.trackArtist ?? prev.lastKnownArtist,
+        trackArtist: dedupeArtists(prev.trackArtist ?? prev.lastKnownArtist),
         trackAlbum: prev.trackAlbum ?? prev.lastKnownAlbum,
         isMinimized: false,
         isMini: false,
         isCinema: false,
+        positionMs: startSec ? startSec * 1000 : prev.positionMs,
+        isMuted: false,
       };
 
       if (provider === 'spotify') {
@@ -475,18 +484,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const openPlayer = useCallback((payload: OpenPlayerPayload) => {
+    const prevProvider = state.provider;
+    if (prevProvider && prevProvider !== payload.provider) {
+      providerControlsRef.current[prevProvider]?.pause?.();
+      providerControlsRef.current[prevProvider]?.setMute?.(true);
+      providerControlsRef.current[prevProvider]?.teardown?.();
+    }
+
     setState((prev) => {
       const updates: Partial<PlayerState> = {
         provider: payload.provider,
         trackId: payload.providerTrackId,
         canonicalTrackId: payload.canonicalTrackId ?? prev.canonicalTrackId,
         trackTitle: payload.title ?? prev.trackTitle ?? prev.lastKnownTitle,
-        trackArtist: payload.artist ?? prev.trackArtist ?? prev.lastKnownArtist,
+        trackArtist: dedupeArtists(payload.artist ?? prev.trackArtist ?? prev.lastKnownArtist),
         trackAlbum: payload.album ?? prev.trackAlbum ?? prev.lastKnownAlbum,
         lastKnownTitle: payload.title ?? prev.trackTitle ?? prev.lastKnownTitle,
-        lastKnownArtist: payload.artist ?? prev.trackArtist ?? prev.lastKnownArtist,
+        lastKnownArtist: dedupeArtists(payload.artist ?? prev.trackArtist ?? prev.lastKnownArtist),
         lastKnownAlbum: payload.album ?? prev.trackAlbum ?? prev.lastKnownAlbum,
         seekToSec: payload.startSec ?? null,
+        positionMs: payload.startSec ? payload.startSec * 1000 : 0,
+        durationMs: prev.durationMs || 0,
+        isMuted: false,
         isMinimized: false,
         isMini: false,
         isCinema: false,
