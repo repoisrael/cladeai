@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,11 +48,38 @@ export function ForumHomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load popular forums
-  useState(() => {
+  // Initial load
+  useEffect(() => {
     loadForums();
     loadPosts();
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filteredForums = useMemo(() => {
+    if (!searchQuery.trim()) return forums;
+    const q = searchQuery.toLowerCase();
+    return forums.filter(
+      (f) =>
+        f.name.toLowerCase().includes(q) ||
+        f.display_name.toLowerCase().includes(q) ||
+        (f.description || '').toLowerCase().includes(q)
+    );
+  }, [forums, searchQuery]);
+
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return posts;
+    const q = searchQuery.toLowerCase();
+    return posts.filter((p) => {
+      return (
+        p.title.toLowerCase().includes(q) ||
+        (p.content || '').toLowerCase().includes(q) ||
+        p.forum.display_name.toLowerCase().includes(q) ||
+        p.forum.name.toLowerCase().includes(q) ||
+        (p.user.display_name || '').toLowerCase().includes(q) ||
+        (p.user.username || '').toLowerCase().includes(q)
+      );
+    });
+  }, [posts, searchQuery]);
 
   async function loadForums() {
     const { data } = await supabase
@@ -162,7 +189,7 @@ export function ForumHomePage() {
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
               </div>
             ) : (
-              posts.map((post) => (
+              filteredPosts.map((post) => (
                 <PostCard
                   key={post.id}
                   post={post}
@@ -182,7 +209,7 @@ export function ForumHomePage() {
                 Popular Forums
               </h2>
               <div className="space-y-3">
-                {forums.map((forum) => (
+                {filteredForums.map((forum) => (
                   <motion.button
                     key={forum.id}
                     whileHover={{ x: 4 }}
