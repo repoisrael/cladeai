@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
-import QuickStreamButtons from '@/components/QuickStreamButtons';
+import { QuickStreamButtons } from '@/components/QuickStreamButtons';
 
 const openPlayerMock = vi.fn();
 
@@ -10,6 +10,10 @@ vi.mock('@/player/PlayerContext', () => ({
   usePlayer: () => ({
     openPlayer: openPlayerMock,
   }),
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'test-user' }, loading: false }),
 }));
 
 describe('Navigation & quicklinks regressions', () => {
@@ -33,7 +37,6 @@ describe('Navigation & quicklinks regressions', () => {
     render(
       <QuickStreamButtons
         track={{ spotifyId: 's1', youtubeId: 'y1' }}
-        canonicalTrackId="canon-1"
         trackTitle="Title"
         trackArtist="Artist"
       />

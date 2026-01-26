@@ -31,13 +31,32 @@ const basePlayerContext = {
   provider: 'spotify',
   trackId: 'test123',
   canonicalTrackId: 'canonical-1',
+  trackTitle: 'Test Track',
+  trackArtist: 'Test Artist',
+  lastKnownTitle: 'Test Track',
+  lastKnownArtist: 'Test Artist',
+  positionMs: 0,
+  durationMs: 180000,
+  volume: 0.7,
+  isMuted: false,
   isPlaying: true,
   setIsPlaying: vi.fn(),
   isMinimized: false,
   setMinimized: vi.fn(),
+  isMini: false,
+  isCinema: false,
+  miniPosition: { x: 0, y: 0 },
+  enterCinema: vi.fn(),
+  exitCinema: vi.fn(),
+  togglePlayPause: vi.fn(),
+  setVolumeLevel: vi.fn(),
+  toggleMute: vi.fn(),
+  seekToMs: vi.fn(),
+  stop: vi.fn(),
+  collapseToMini: vi.fn(),
+  restoreFromMini: vi.fn(),
+  setMiniPosition: vi.fn(),
   closePlayer: vi.fn(),
-  trackTitle: 'Test Track',
-  trackArtist: 'Test Artist',
   nextTrack: vi.fn(),
   previousTrack: vi.fn(),
 };
@@ -79,13 +98,32 @@ beforeEach(() => {
     provider: 'spotify',
     trackId: 'test123',
     canonicalTrackId: 'canonical-1',
+    trackTitle: 'Test Track',
+    trackArtist: 'Test Artist',
+    lastKnownTitle: 'Test Track',
+    lastKnownArtist: 'Test Artist',
+    positionMs: 0,
+    durationMs: 180000,
+    volume: 0.7,
+    isMuted: false,
     isPlaying: true,
     setIsPlaying: vi.fn(),
     isMinimized: false,
     setMinimized: vi.fn(),
+    isMini: false,
+    isCinema: false,
+    miniPosition: { x: 0, y: 0 },
+    enterCinema: vi.fn(),
+    exitCinema: vi.fn(),
+    togglePlayPause: vi.fn(),
+    setVolumeLevel: vi.fn(),
+    toggleMute: vi.fn(),
+    seekToMs: vi.fn(),
+    stop: vi.fn(),
+    collapseToMini: vi.fn(),
+    restoreFromMini: vi.fn(),
+    setMiniPosition: vi.fn(),
     closePlayer: vi.fn(),
-    trackTitle: 'Test Track',
-    trackArtist: 'Test Artist',
     clearSeek: vi.fn(),
     seekToSec: null,
     nextTrack: vi.fn(),
@@ -118,7 +156,7 @@ describe('Mobile Player QA', () => {
 
     it('should not overlap with TikTok buttons on mobile', () => {
       const { container } = render(<EmbeddedPlayerDrawer />, { wrapper });
-      const player = container.querySelector('.fixed');
+      const player = container.querySelector('[data-player="universal"]');
       expect(player).toHaveClass('top-14');
       expect(player).toHaveClass('left-1/2');
     });
@@ -129,7 +167,7 @@ describe('Mobile Player QA', () => {
       const minimizeButton = screen.getByLabelText(/minimize to mini player/i);
       fireEvent.click(minimizeButton);
 
-      expect(mockPlayerContext.setMinimized).toHaveBeenCalledWith(true);
+      expect(mockPlayerContext.collapseToMini).toHaveBeenCalled();
     });
 
     it('should switch between Spotify and YouTube', async () => {
@@ -429,8 +467,8 @@ describe('Accessibility QA', () => {
   it('should have proper ARIA labels', () => {
     render(<EmbeddedPlayerDrawer />, { wrapper });
     
-    expect(screen.getAllByLabelText(/close player/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText(/minimize player/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(/stop playback/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(/minimize to mini player/i).length).toBeGreaterThan(0);
   });
 
   it('should support keyboard navigation', () => {
