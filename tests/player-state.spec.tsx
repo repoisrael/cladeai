@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { describe, it, expect } from 'vitest';
 import { act, render, waitFor } from '@testing-library/react';
-import { PlayerProvider, usePlayer } from '@/player/PlayerContext';
-import type { MusicProvider } from '@/types';
+import { PlayerProvider, usePlayer } from '../src/player/PlayerContext';
+import type { MusicProvider } from '../src/types';
 
 function withProvider(testFn: (ctx: ReturnType<typeof usePlayer>) => void | Promise<void>) {
   const Wrapper = () => {

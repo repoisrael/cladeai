@@ -35,9 +35,15 @@ const ForumHomePage = lazy(() =>
 );
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminPerformanceDashboard = lazy(() => import("./components/AdminPerformanceDashboard"));
-const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage"));
-const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
-const MusicTasteSurvey = lazy(() => import("./components/MusicTasteSurvey"));
+const TermsOfServicePage = lazy(() =>
+  import("./pages/TermsOfServicePage").then((module) => ({ default: module.TermsOfServicePage }))
+);
+const PrivacyPolicyPage = lazy(() =>
+  import("./pages/PrivacyPolicyPage").then((module) => ({ default: module.PrivacyPolicyPage }))
+);
+const MusicTasteSurvey = lazy(() =>
+  import("./components/MusicTasteSurvey").then((module) => ({ default: module.MusicTasteSurvey }))
+);
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
