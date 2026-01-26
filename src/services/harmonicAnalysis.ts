@@ -26,6 +26,7 @@ import type {
 } from '@/types/harmony';
 import type { Track } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { analyzeAudioTrack } from './audioAnalysis';
 
 type AnalysisJobRequest = AnalysisRequest & {
   audio_hash?: string;
@@ -359,6 +360,7 @@ async function storeInCache(
 
 /**
  * Run actual audio analysis (ML model)
+ * Orchestrates the analysis pipeline and updates job status
  */
 async function runAnalysisJob(job: AnalysisJob, request?: AnalysisJobRequest): Promise<AnalysisResult> {
   const startTime = Date.now();
@@ -379,26 +381,23 @@ async function runAnalysisJob(job: AnalysisJob, request?: AnalysisJobRequest): P
     job.progress = 0.1;
     await touch({ status: job.status, progress: job.progress });
 
-    // TODO: Fetch audio file
-    job.progress = 0.3;
-    await touch({ progress: job.progress });
+    // Run ML analysis pipeline
+    console.log('[AnalysisJob] Starting ML pipeline for:', job.track_id);
+    
+    const fingerprint = await analyzeAudioTrack({
+      track_id: job.track_id,
+      audio_hash: request?.audio_hash,
+      isrc: request?.isrc,
+      // TODO: Pass actual audio_url when available
+      // audio_url: track.audio_preview_url,
+    });
 
-    // TODO: Extract chroma features
-    job.progress = 0.5;
-    await touch({ progress: job.progress });
-
-    // TODO: Detect key and mode
-    job.progress = 0.7;
-    await touch({ progress: job.progress });
-
-    // TODO: Identify chord progression
     job.progress = 0.9;
     await touch({ progress: job.progress });
 
-    // TEMPORARY: Mock result for demonstration
-    const mockResult = createMockAnalysis(job.track_id);
+    // Add identifiers from request
     const fingerprintToStore = {
-      ...mockResult.fingerprint,
+      ...fingerprint,
       audio_hash: request?.audio_hash ?? null,
       isrc: request?.isrc ?? null,
     };
@@ -409,7 +408,7 @@ async function runAnalysisJob(job: AnalysisJob, request?: AnalysisJobRequest): P
     job.status = 'completed';
     job.progress = 1.0;
     job.completed_at = new Date().toISOString();
-    job.result = mockResult.fingerprint;
+    job.result = fingerprintToStore;
 
     await touch({
       status: job.status,
@@ -418,15 +417,30 @@ async function runAnalysisJob(job: AnalysisJob, request?: AnalysisJobRequest): P
       result: fingerprintToStore,
     });
 
+    console.log('[AnalysisJob] Completed analysis:', {
+      job_id: job.id,
+      track_id: job.track_id,
+      confidence: fingerprint.confidence_score,
+      progression_length: fingerprint.roman_progression.length,
+    });
+
     return {
-      ...mockResult,
       fingerprint: fingerprintToStore,
+      confidence: extractConfidence(fingerprintToStore),
+      method: 'ml_audio',
       processing_time_ms: Date.now() - startTime,
     };
   } catch (error) {
     job.status = 'failed';
     job.error_message = error instanceof Error ? error.message : 'Unknown error';
     await touch({ status: job.status, error_message: job.error_message });
+    
+    console.error('[AnalysisJob] Analysis failed:', {
+      job_id: job.id,
+      track_id: job.track_id,
+      error: job.error_message,
+    });
+    
     throw error;
   }
 }
