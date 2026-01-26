@@ -1,0 +1,1 @@
+import{r as s,D as o,aG as u}from"./index-CbdBNPNQ.js";var i=u[" useId ".trim().toString()]||(()=>{}),c=0;function n(r){const[t,a]=s.useState(i());return o(()=>{a(e=>e??String(c++))},[r]),t?`radix-${t}`:""}export{n as u};
