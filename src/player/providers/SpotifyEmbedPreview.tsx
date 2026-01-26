@@ -29,6 +29,12 @@ interface SpotifyEmbedPreviewProps {
 }
 
 let sdkPromise: Promise<void> | null = null;
+let spotifyPlayerSingleton: SpotifyPlayer | null = null;
+let spotifyDeviceId: string | null = null;
+let audioContextResumed = false;
+let spotifyListenersAttached = false;
+
+const MIN_AUDIBLE_VOLUME = 0.05; // avoid accidental zeros when unmuted
 
 const loadSdk = () => {
   if (sdkPromise) return sdkPromise;
@@ -48,6 +54,45 @@ const loadSdk = () => {
     document.body.appendChild(script);
   });
   return sdkPromise;
+};
+
+const getOrCreatePlayer = (token: string, initialVolume: number): SpotifyPlayer => {
+  if (spotifyPlayerSingleton) return spotifyPlayerSingleton;
+
+  spotifyPlayerSingleton = new window.Spotify!.Player({
+    name: 'Clade Player',
+    getOAuthToken: (cb) => cb(token),
+    volume: initialVolume,
+  });
+
+  return spotifyPlayerSingleton;
+};
+
+const resumeAudioContextOnGesture = () => {
+  if (audioContextResumed) return;
+  const handler = () => {
+    const ctx = (window as any).__spotifyAudioContext;
+    if (ctx?.state === 'suspended') {
+      void ctx.resume();
+    }
+    audioContextResumed = true;
+    document.removeEventListener('click', handler);
+    document.removeEventListener('touchstart', handler);
+  };
+  document.addEventListener('click', handler, { once: true });
+  document.addEventListener('touchstart', handler, { once: true });
+};
+
+const logActiveDevice = async (token: string) => {
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me/player', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    console.log('[Spotify] ACTIVE DEVICE:', data?.device);
+  } catch (err) {
+    console.warn('[Spotify] Failed to fetch active device', err);
+  }
 };
 
 export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedPreviewProps) {
@@ -94,41 +139,54 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
           return;
         }
 
-        const player = new window.Spotify.Player({
-          name: 'Clade Player',
-          getOAuthToken: (cb) => cb(token),
-          volume: isMuted ? 0 : volumeRef.current,
-        });
+        const initialVolume = isMuted ? 0 : Math.max(volumeRef.current, MIN_AUDIBLE_VOLUME);
+        const player = getOrCreatePlayer(token, initialVolume);
 
-        player.addListener('ready', ({ device_id }) => {
-          deviceIdRef.current = device_id;
-          setReady(true);
-          transferPlayback(device_id, token, autoplay ?? autoplaySpotify);
-          if (providerTrackId) {
-            startPlayback(device_id, token, providerTrackId, seekToSec ?? 0);
-          }
-        });
-
-        player.addListener('player_state_changed', (state) => {
-          if (!state) return;
-          updatePlaybackState({
-            positionMs: state.position,
-            durationMs: state.duration,
-            isPlaying: !state.paused,
-            volume: state.volume ?? volumeRef.current,
-            isMuted: state.volume === 0,
-            trackTitle: state.track_window?.current_track?.name ?? null,
-            trackArtist: state.track_window?.current_track?.artists?.map((a) => a.name).join(', ') ?? null,
-            trackAlbum: state.track_window?.current_track?.album?.name ?? null,
+        if (!spotifyListenersAttached) {
+          player.addListener('ready', ({ device_id }) => {
+            spotifyDeviceId = device_id;
+            deviceIdRef.current = device_id;
+            setReady(true);
+            console.log('[Spotify] READY device:', device_id);
+            void logActiveDevice(token);
+            void transferPlayback(device_id, token, autoplay ?? autoplaySpotify);
+            if (providerTrackId) {
+              void startPlayback(device_id, token, providerTrackId, seekToSec ?? 0);
+            }
           });
-        });
 
-        player.addListener('not_ready', () => {
-          setReady(false);
-        });
+          player.addListener('player_state_changed', (state) => {
+            if (!state) return;
+            console.log('[Spotify] state:', {
+              paused: state.paused,
+              position: state.position,
+              duration: state.duration,
+              track: state.track_window?.current_track?.name,
+              volume: state.device?.volume_percent,
+            });
+            updatePlaybackState({
+              positionMs: state.position,
+              durationMs: state.duration,
+              isPlaying: !state.paused,
+              volume: state.volume ?? volumeRef.current,
+              isMuted: state.volume === 0,
+              trackTitle: state.track_window?.current_track?.name ?? null,
+              trackArtist: state.track_window?.current_track?.artists?.map((a) => a.name).join(', ') ?? null,
+              trackAlbum: state.track_window?.current_track?.album?.name ?? null,
+            });
+          });
+
+          player.addListener('not_ready', ({ device_id }) => {
+            console.warn('[Spotify] NOT_READY device:', device_id);
+            setReady(false);
+          });
+
+          spotifyListenersAttached = true;
+        }
 
         await player.connect();
         playerRef.current = player;
+        resumeAudioContextOnGesture();
 
         registerProviderControls('spotify', {
           play: async (startSec) => {
@@ -148,13 +206,14 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
           },
           setVolume: async (vol: number) => {
             volumeRef.current = vol;
-            await player.setVolume(vol);
+            await player.setVolume(Math.max(vol, MIN_AUDIBLE_VOLUME));
           },
           setMute: async (muted: boolean) => {
-            await player.setVolume(muted ? 0 : volumeRef.current);
+            await player.setVolume(muted ? 0 : Math.max(volumeRef.current, MIN_AUDIBLE_VOLUME));
           },
           teardown: async () => {
             await player.disconnect();
+            spotifyPlayerSingleton = null;
           },
         });
       } catch (err) {
@@ -166,7 +225,7 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
 
     return () => {
       cancelled = true;
-      playerRef.current?.disconnect();
+      // Do not disconnect the singleton on unmount to avoid orphan device audio; let teardown handle it on provider switch.
       playerRef.current = null;
       setReady(false);
     };
