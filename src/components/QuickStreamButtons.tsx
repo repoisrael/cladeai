@@ -84,14 +84,6 @@ export function QuickStreamButtons({
 
   const handleSpotifyClick = useCallback(() => {
     if (!hasSpotify || !track.spotifyId) return;
-    
-    // Guests cannot use the embedded Spotify SDK; open web player as a fallback
-    if (!user) {
-      if (spotifyLink?.webUrl) {
-        window.open(spotifyLink.webUrl, '_blank', 'noopener,noreferrer');
-      }
-      return;
-    }
 
     setPreferredProvider('spotify');
     openPlayer({
@@ -104,7 +96,7 @@ export function QuickStreamButtons({
       artist: trackArtist,
       startSec: currentPositionSec,
     });
-  }, [hasSpotify, canonicalTrackId, trackTitle, trackArtist, openPlayer, currentPositionSec, user, spotifyTrackId, spotifyLink?.webUrl]);
+  }, [hasSpotify, canonicalTrackId, trackTitle, trackArtist, openPlayer, currentPositionSec, spotifyTrackId]);
 
   const handleYouTubeClick = useCallback(() => {
     if (!hasYouTube || !track.youtubeId) return;

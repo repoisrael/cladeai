@@ -28,9 +28,6 @@ export function EmbeddedPlayerDrawer() {
     isMinimized,
     isMini,
     isCinema,
-    collapseToMini,
-    restoreFromMini,
-    setMiniPosition,
     miniPosition,
     enterCinema,
     exitCinema,
@@ -39,7 +36,10 @@ export function EmbeddedPlayerDrawer() {
     setVolumeLevel,
     toggleMute,
     seekToMs,
-    closePlayer,
+    stop,
+    collapseToMini,
+    restoreFromMini,
+    setMiniPosition,
   } = usePlayer();
   const cinemaRef = useRef<HTMLDivElement | null>(null);
   const autoplay = isPlaying;
@@ -118,13 +118,21 @@ export function EmbeddedPlayerDrawer() {
     }
   }, [isOpen, resolvedTitle]);
 
+  const dragBounds = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return { left: -200, right: 200, top: -60, bottom: 400 };
+    }
+    const halfWidth = window.innerWidth / 2;
+    return { left: -halfWidth, right: halfWidth, top: -60, bottom: window.innerHeight };
+  }, []);
+
   return (
     <>
       {/* Single Interchangeable Player - positioned inside navbar area, draggable across screen */}
       {!isMini && (
         <motion.div
           drag
-          dragConstraints={{ left: -window.innerWidth / 2, right: window.innerWidth / 2, top: -60, bottom: window.innerHeight }}
+          dragConstraints={dragBounds}
           dragElastic={0.15}
           initial={{ y: 0, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -169,7 +177,7 @@ export function EmbeddedPlayerDrawer() {
               </button>
               <button
                 type="button"
-                onClick={closePlayer}
+                onClick={stop}
                 className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-destructive/30 hover:text-destructive"
                 aria-label="Stop playback"
                 title="Stop playback"
