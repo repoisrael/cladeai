@@ -72,13 +72,19 @@ export function TrackComments({ trackId, className = '' }: TrackCommentsProps) {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_track_comments', {
-        p_track_id: trackId,
-        p_limit: 50,
-        p_offset: 0,
-      });
+      const { data, error } = await supabase
+        .from('track_comments')
+        .select('*')
+        .eq('track_id', trackId)
+        .order('created_at', { ascending: true })
+        .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('[TrackComments] skipping comments fetch due to schema error', error);
+        setComments([]);
+        return;
+      }
+
       setComments(data || []);
     } catch (error) {
       console.error('Error loading comments:', error);

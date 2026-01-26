@@ -23,13 +23,16 @@ export function BottomNav() {
             <NavLink
               key={item.to}
               to={item.to}
-              className="flex flex-col items-center gap-1 p-2 relative"
+              className={cn(
+                'group flex flex-col items-center gap-1 px-3 py-2 rounded-xl relative transition-colors',
+                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              )}
             >
               <motion.div
                 whileTap={{ scale: 0.9 }}
                 className={cn(
                   'p-2 rounded-xl transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                 )}
               >
                 <item.icon className="w-6 h-6" />
@@ -44,7 +47,7 @@ export function BottomNav() {
               <span
                 className={cn(
                   'text-xs font-medium transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                 )}
               >
                 {item.label}

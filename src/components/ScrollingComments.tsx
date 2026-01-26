@@ -51,7 +51,11 @@ export function ScrollingComments({
               .limit(20);
 
         const { data, error } = await query;
-        if (error) throw error;
+        if (error) {
+          console.warn('[ScrollingComments] skipping due to schema error', error);
+          setComments([]);
+          return;
+        }
 
         if (data) {
           const formattedComments: Comment[] = data.map((item: any) => ({
