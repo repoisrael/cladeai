@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { usePlayer } from './PlayerContext';
 import { YouTubePlayer } from './providers/YouTubePlayer';
@@ -19,9 +19,20 @@ export function EmbeddedPlayerDrawer() {
     trackTitle,
     trackArtist,
     trackAlbum,
+    lastKnownTitle,
+    lastKnownArtist,
+    lastKnownAlbum,
     isOpen,
     isMinimized,
+    isMini,
+    isCinema,
     setMinimized,
+    collapseToMini,
+    restoreFromMini,
+    setMiniPosition,
+    miniPosition,
+    enterCinema,
+    exitCinema,
     isPlaying,
     setIsPlaying,
     nextTrack,
@@ -33,8 +44,12 @@ export function EmbeddedPlayerDrawer() {
   const [volume, setVolume] = useState(70);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(180);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const cinemaRef = useRef<HTMLDivElement | null>(null);
   const autoplay = isPlaying;
+
+  const resolvedTitle = trackTitle ?? lastKnownTitle ?? '';
+  const resolvedArtist = trackArtist ?? lastKnownArtist ?? '';
+  const resolvedAlbum = trackAlbum ?? lastKnownAlbum ?? '';
 
   const meta = useMemo(() => {
     const fallback = { label: 'Now Playing', badge: '♪', color: 'bg-neutral-900/90' };
@@ -76,22 +91,35 @@ export function EmbeddedPlayerDrawer() {
   };
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
+    if (provider !== 'youtube') return;
+    if (isCinema) {
+      document.exitFullscreen?.();
+      exitCinema();
     } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
+      enterCinema();
     }
   };
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const active = !!document.fullscreenElement;
+      if (!active) {
+        exitCinema();
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
+  }, [exitCinema]);
+
+  useEffect(() => {
+    if (!isCinema) return;
+    const node = cinemaRef.current;
+    if (!node) return;
+    if (document.fullscreenElement) return;
+    node.requestFullscreen?.().catch(() => {
+      exitCinema();
+    });
+  }, [isCinema, exitCinema]);
 
   // Nuclear assertion: never allow more than one universal player in dev/test
   useEffect(() => {
@@ -103,20 +131,34 @@ export function EmbeddedPlayerDrawer() {
     }
   }, []);
 
+  // Dev guard: ensure only one iframe/provider instance and metadata present
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (process.env.NODE_ENV === 'production') return;
+    const frames = document.querySelectorAll('iframe[src*="spotify"], iframe[src*="youtube"]');
+    if (frames.length > 1) {
+      throw new Error('Invariant violated: multiple provider iframes detected.');
+    }
+    if (isOpen && !resolvedTitle) {
+      throw new Error('Invariant violated: player rendered without title.');
+    }
+  }, [isOpen, resolvedTitle]);
+
   return (
     <>
       {/* Single Interchangeable Player - EXACT same position for Spotify & YouTube */}
-      <motion.div
-        drag={isMinimized ? "y" : false}
-        dragConstraints={{ top: 0, bottom: 200 }}
-        dragElastic={0.1}
-        initial={{ y: 48, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 48, opacity: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        data-player="universal"
-        className="pointer-events-auto fixed top-4 right-4 left-4 md:top-auto md:bottom-[calc(env(safe-area-inset-bottom)+24px)] md:left-1/2 md:right-auto z-[60] transform md:-translate-x-1/2 w-[calc(100vw-2rem)] md:w-[640px] md:max-w-[640px] px-2 md:px-0"
-      >
+      {!isMini && (
+        <motion.div
+          drag={isMinimized ? "y" : false}
+          dragConstraints={{ top: 0, bottom: 200 }}
+          dragElastic={0.1}
+          initial={{ y: 48, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 48, opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          data-player="universal"
+          className="pointer-events-auto fixed top-4 right-4 left-4 md:top-auto md:bottom-[calc(env(safe-area-inset-bottom)+24px)] md:left-1/2 md:right-auto z-[60] transform md:-translate-x-1/2 w-[calc(100vw-2rem)] md:w-[640px] md:max-w-[640px] px-2 md:px-0"
+        >
         <div className={`overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br ${meta.color} shadow-2xl backdrop-blur-xl`}>
           {/* Header - Always visible, compact on mobile */}
           <div className="flex items-center gap-3 px-3 py-2 md:px-4 md:py-2.5 bg-background/80 backdrop-blur">
@@ -125,8 +167,12 @@ export function EmbeddedPlayerDrawer() {
             </span>
             <div className="flex flex-col leading-tight flex-1 min-w-0">
               <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Now Playing</span>
-              <span className="text-xs md:text-sm font-bold text-foreground truncate" aria-label="Track title">{trackTitle ?? 'Unknown title'}</span>
-              <span className="text-[11px] md:text-xs text-muted-foreground truncate" aria-label="Artist name">{trackArtist ?? 'Unknown artist'}</span>
+              {resolvedTitle && (
+                <span className="text-xs md:text-sm font-bold text-foreground truncate" aria-label="Track title">{resolvedTitle}</span>
+              )}
+              {resolvedArtist && (
+                <span className="text-[11px] md:text-xs text-muted-foreground truncate" aria-label="Artist name">{resolvedArtist}</span>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -147,9 +193,9 @@ export function EmbeddedPlayerDrawer() {
               </button>
               <button
                 type="button"
-                onClick={closePlayer}
+                onClick={collapseToMini}
                 className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
-                aria-label="Close player"
+                aria-label="Collapse to mini player"
               >
                 <X className="h-3 w-3 md:h-4 md:w-4" />
               </button>
@@ -158,9 +204,9 @@ export function EmbeddedPlayerDrawer() {
 
           <div className="flex items-center gap-3 px-3 pb-2 md:px-4 md:pb-3">
             <div className="flex flex-col flex-1 min-w-0 text-white/90" aria-live="polite">
-              <span className="text-sm md:text-base font-semibold truncate">{trackTitle ?? 'Unknown title'}</span>
-              <span className="text-xs md:text-sm text-white/80 truncate">{trackArtist ?? 'Unknown artist'}</span>
-              <span className="text-[11px] md:text-xs text-white/70 truncate">{trackAlbum ?? 'Unknown album'}</span>
+              {resolvedTitle && <span className="text-sm md:text-base font-semibold truncate">{resolvedTitle}</span>}
+              {resolvedArtist && <span className="text-xs md:text-sm text-white/80 truncate">{resolvedArtist}</span>}
+              {resolvedAlbum && <span className="text-[11px] md:text-xs text-white/70 truncate">{resolvedAlbum}</span>}
             </div>
             <div className="flex items-center gap-2 text-white">
               <span className="text-[11px] md:text-xs tabular-nums" aria-label="Elapsed time">{formatTime(currentTime)}</span>
@@ -212,7 +258,7 @@ export function EmbeddedPlayerDrawer() {
             <button
               onClick={toggleFullscreen}
               className="p-2 text-white/80 hover:text-white transition-colors rounded"
-              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              aria-label={isCinema ? 'Exit cinema mode' : 'Enter cinema mode'}
             >
               <Maximize2 className="w-4 h-4" />
             </button>
@@ -220,7 +266,46 @@ export function EmbeddedPlayerDrawer() {
         </div>
 
         {/* Embeds are rendered once at the root to avoid duplicates; see shared container below */}
-      </motion.div>
+        </motion.div>
+      )}
+
+      {isMini && (
+        <motion.div
+          drag
+          dragElastic={0.2}
+          dragConstraints={{ left: -80, right: 80, top: -80, bottom: 200 }}
+          onDragEnd={(_, info) => {
+            setMiniPosition({ x: miniPosition.x + info.offset.x, y: miniPosition.y + info.offset.y });
+          }}
+          style={{ x: miniPosition.x, y: miniPosition.y }}
+          className="pointer-events-auto fixed bottom-6 right-4 z-[65] w-[260px] max-w-[80vw] rounded-xl border border-border/60 bg-neutral-900/90 shadow-2xl backdrop-blur-lg"
+        >
+          <div className="flex items-center justify-between px-3 py-2 gap-2">
+            <div className="flex flex-col min-w-0">
+              {resolvedTitle && <span className="text-sm font-semibold text-white truncate">{resolvedTitle}</span>}
+              {resolvedArtist && <span className="text-xs text-white/70 truncate">{resolvedArtist}</span>}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={togglePlayPause}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={restoreFromMini}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                aria-label="Restore player"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Desktop Player - Bottom bar */}
       <div
@@ -241,19 +326,19 @@ export function EmbeddedPlayerDrawer() {
       >
         <div className="flex flex-row items-center w-full max-w-lg mx-auto px-2 gap-2">
           <span className="text-xl select-none" aria-label={meta.label}>{meta.badge}</span>
-          <span className="flex-1 truncate text-sm font-semibold text-white" title={trackTitle ?? 'Now Playing'}>
-            {trackTitle ?? (isIdle ? 'Player ready — pick a track' : 'Now Playing')}
+          <span className="flex-1 truncate text-sm font-semibold text-white" title={resolvedTitle || 'Now Playing'}>
+            {resolvedTitle || (isIdle ? 'Player ready — pick a track' : 'Now Playing')}
           </span>
-          {trackArtist && !isIdle && (
-            <span className="text-xs text-white/70 truncate" title={trackArtist}>
-              {trackArtist}
+          {resolvedArtist && !isIdle && (
+            <span className="text-xs text-white/70 truncate" title={resolvedArtist}>
+              {resolvedArtist}
             </span>
           )}
           <button
             type="button"
-            onClick={closePlayer}
+            onClick={collapseToMini}
             className="ml-2 text-white/80 hover:text-white text-lg px-2 py-1 rounded"
-            aria-label="Close player"
+            aria-label="Collapse player"
           >
             ×
           </button>
@@ -262,12 +347,33 @@ export function EmbeddedPlayerDrawer() {
 
       {/* Single shared embed container to guarantee exactly one iframe */}
       <div
+        ref={isCinema && provider === 'youtube' ? cinemaRef : undefined}
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[120] pointer-events-auto',
-          'h-[1px] overflow-hidden md:h-[52px]'
+          'fixed bottom-0 left-0 right-0 pointer-events-auto',
+          isCinema && provider === 'youtube'
+            ? 'inset-0 z-[140] bg-black/80 flex items-center justify-center'
+            : 'z-[120] h-[1px] overflow-hidden md:h-[52px]'
         )}
         aria-hidden
       >
+        {isCinema && provider === 'youtube' && (
+          <>
+            <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+            <div className="absolute top-4 right-4 z-20">
+              <button
+                type="button"
+                onClick={() => {
+                  document.exitFullscreen?.();
+                  exitCinema();
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
+                aria-label="Exit cinema mode"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </>
+        )}
         {provider && trackId ? (
           provider === 'spotify' ? (
             <SpotifyEmbedPreview providerTrackId={trackId} autoplay={autoplay} />
