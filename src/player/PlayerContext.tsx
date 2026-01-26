@@ -13,6 +13,7 @@ export interface PlayerState {
   canonicalTrackId: string | null;
   trackTitle: string | null;
   trackArtist: string | null;
+  trackAlbum: string | null;
   spotifyOpen: boolean;
   youtubeOpen: boolean;
   spotifyTrackId: string | null;
@@ -33,6 +34,7 @@ type OpenPlayerPayload = {
   providerTrackId: string | null;
   title?: string;
   artist?: string;
+  album?: string;
   autoplay?: boolean;
   context?: string;
   /** Optional start time in seconds */
@@ -81,6 +83,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     canonicalTrackId: null,
     trackTitle: null,
     trackArtist: null,
+    trackAlbum: null,
     spotifyOpen: false,
     youtubeOpen: false,
     spotifyTrackId: null,
@@ -298,6 +301,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         canonicalTrackId: payload.canonicalTrackId ?? prev.canonicalTrackId,
         trackTitle: payload.title ?? prev.trackTitle,
         trackArtist: payload.artist ?? prev.trackArtist,
+        trackAlbum: payload.album ?? prev.trackAlbum,
         seekToSec: payload.startSec ?? null,
         isMinimized: false,
         isPlaying: payload.autoplay ?? true,
