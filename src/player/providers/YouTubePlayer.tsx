@@ -14,17 +14,25 @@ declare global {
 }
 
 let ytPromise: Promise<void> | null = null;
+let ytReady = false;
 
 const loadYouTubeApi = () => {
+  if (ytReady) return Promise.resolve();
   if (ytPromise) return ytPromise;
   ytPromise = new Promise<void>((resolve) => {
     if (window.YT && window.YT.Player) {
+      ytReady = true;
       resolve();
       return;
     }
+    window.onYouTubeIframeAPIReady = () => {
+      ytReady = true;
+      resolve();
+    };
+    const existing = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if (existing) return;
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
-    window.onYouTubeIframeAPIReady = () => resolve();
     document.body.appendChild(tag);
   });
   return ytPromise;
@@ -44,11 +52,16 @@ export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps)
     isMuted,
   } = usePlayer();
 
-  const iframeOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
-
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<any>(null);
   const pollRef = useRef<number | null>(null);
+  const volumeRef = useRef(volume);
+  const mutedRef = useRef(isMuted);
+
+  useEffect(() => {
+    volumeRef.current = volume;
+    mutedRef.current = isMuted;
+  }, [volume, isMuted]);
 
   useEffect(() => {
     if (provider !== 'youtube' || !providerTrackId) return;
@@ -56,7 +69,12 @@ export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps)
 
     const setup = async () => {
       await loadYouTubeApi();
-      if (destroyed || !window.YT) return;
+      if (destroyed || !window.YT || !containerRef.current) return;
+
+      if (playerRef.current?.loadVideoById) {
+        playerRef.current.loadVideoById(providerTrackId, 0);
+        return;
+      }
 
       playerRef.current = new window.YT.Player(containerRef.current, {
         videoId: providerTrackId,
@@ -67,18 +85,19 @@ export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps)
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
-          origin: iframeOrigin,
+          enablejsapi: 1,
+          origin: window.location.origin,
         },
         events: {
           onReady: (event: any) => {
             event.target.mute();
-            event.target.setVolume(Math.round(volume * 100));
+            event.target.setVolume(Math.round(volumeRef.current * 100));
             if (autoplay) {
               event.target.playVideo();
             }
             // Unmute only if global state is not muted to avoid user gesture issues
-            if (!isMuted) {
-              event.target.unMute();
+            if (!mutedRef.current) {
+              window.setTimeout(() => event.target.unMute(), 150);
             }
             updatePlaybackState({ durationMs: event.target.getDuration() * 1000 });
           },
@@ -115,16 +134,26 @@ export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps)
           if (!playerRef.current) return;
           playerRef.current.mute?.();
           await playerRef.current.playVideo?.();
-          if (!isMuted) playerRef.current.unMute?.();
+          if (!mutedRef.current) window.setTimeout(() => playerRef.current?.unMute?.(), 150);
         },
         pause: async () => playerRef.current?.pauseVideo?.(),
         seekTo: async (seconds: number) => playerRef.current?.seekTo?.(seconds, true),
-        setVolume: async (vol: number) => playerRef.current?.setVolume?.(Math.round(vol * 100)),
+        setVolume: async (vol: number) => {
+          volumeRef.current = vol;
+          playerRef.current?.setVolume?.(Math.round(vol * 100));
+        },
         setMute: async (muted: boolean) => {
+          mutedRef.current = muted;
           if (muted) playerRef.current?.mute?.();
           else playerRef.current?.unMute?.();
         },
-        teardown: async () => playerRef.current?.destroy?.(),
+        teardown: async () => {
+          try {
+            playerRef.current?.destroy?.();
+          } catch (err) {
+            console.warn('YouTube teardown failed', err);
+          }
+        },
       });
     };
 
@@ -133,10 +162,14 @@ export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps)
     return () => {
       destroyed = true;
       if (pollRef.current) window.clearInterval(pollRef.current);
-      playerRef.current?.destroy?.();
+      try {
+        playerRef.current?.destroy?.();
+      } catch (err) {
+        console.warn('YouTube destroy failed', err);
+      }
       playerRef.current = null;
     };
-  }, [provider, providerTrackId, autoplay, registerProviderControls, updatePlaybackState, volume, isMuted]);
+  }, [provider, providerTrackId, autoplay, registerProviderControls, updatePlaybackState]);
 
   // External seek requests
   useEffect(() => {

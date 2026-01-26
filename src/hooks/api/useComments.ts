@@ -19,25 +19,30 @@ export function useTrackComments(trackId: string) {
   return useQuery({
     queryKey: ['track-comments', trackId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('track_comments')
-        .select(`
-          *,
-          profiles:user_id (
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('track_id', trackId)
-        .order('created_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('track_comments')
+          .select(`
+            *,
+            profiles:user_id (
+              display_name,
+              avatar_url
+            )
+          `)
+          .eq('track_id', trackId)
+          .order('created_at', { ascending: true });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      return (data || []).map((comment: any) => ({
-        ...comment,
-        user_display_name: comment.profiles?.display_name || 'Anonymous',
-        user_avatar_url: comment.profiles?.avatar_url,
-      })) as Comment[];
+        return (data || []).map((comment: any) => ({
+          ...comment,
+          user_display_name: comment.profiles?.display_name || 'Anonymous',
+          user_avatar_url: comment.profiles?.avatar_url,
+        })) as Comment[];
+      } catch (error) {
+        console.error('Failed to load track comments:', error);
+        return [];
+      }
     },
     enabled: !!trackId,
   });
@@ -57,21 +62,26 @@ export function useAddComment() {
       content: string; 
       parentId?: string;
     }) => {
-      if (!user) throw new Error('Must be logged in to comment');
+      try {
+        if (!user) throw new Error('Must be logged in to comment');
 
-      const { data, error } = await supabase
-        .from('track_comments')
-        .insert({
-          track_id: trackId,
-          user_id: user.id,
-          content,
-          parent_id: parentId || null,
-        })
-        .select()
-        .single();
+        const { data, error } = await supabase
+          .from('track_comments')
+          .insert({
+            track_id: trackId,
+            user_id: user.id,
+            content,
+            parent_id: parentId || null,
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('Failed to add comment:', error);
+        return null;
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['track-comments', variables.trackId] });
@@ -84,12 +94,16 @@ export function useDeleteComment() {
 
   return useMutation({
     mutationFn: async ({ commentId, trackId }: { commentId: string; trackId: string }) => {
-      const { error } = await supabase
-        .from('track_comments')
-        .delete()
-        .eq('id', commentId);
+      try {
+        const { error } = await supabase
+          .from('track_comments')
+          .delete()
+          .eq('id', commentId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } catch (error) {
+        console.error('Failed to delete comment:', error);
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['track-comments', variables.trackId] });
@@ -101,13 +115,18 @@ export function useCommentCount(trackId: string) {
   return useQuery({
     queryKey: ['comment-count', trackId],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('track_comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('track_id', trackId);
+      try {
+        const { count, error } = await supabase
+          .from('track_comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('track_id', trackId);
 
-      if (error) throw error;
-      return count || 0;
+        if (error) throw error;
+        return count || 0;
+      } catch (error) {
+        console.error('Failed to load comment count:', error);
+        return 0;
+      }
     },
     enabled: !!trackId,
   });

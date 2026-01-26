@@ -34,31 +34,37 @@ export function ScrollingComments({
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupSubscription = async () => {
-      // Fetch recent comments
-      const query = trackId
-        ? supabase
-            .from('track_comments')
-            .select('id, content, profiles(full_name), created_at')
-            .eq('track_id', trackId)
-            .order('created_at', { ascending: false })
-            .limit(20)
-        : supabase
-            .from('chat_messages')
-            .select('id, content, profiles(full_name), created_at')
-            .eq('room_id', roomId)
-            .order('created_at', { ascending: false })
-            .limit(20);
+      try {
+        // Fetch recent comments
+        const query = trackId
+          ? supabase
+              .from('track_comments')
+              .select('id, content, profiles(full_name), created_at')
+              .eq('track_id', trackId)
+              .order('created_at', { ascending: false })
+              .limit(20)
+          : supabase
+              .from('chat_messages')
+              .select('id, content, profiles(full_name), created_at')
+              .eq('room_id', roomId)
+              .order('created_at', { ascending: false })
+              .limit(20);
 
-      const { data } = await query;
+        const { data, error } = await query;
+        if (error) throw error;
 
-      if (data) {
-        const formattedComments: Comment[] = data.map((item: any) => ({
-          id: item.id,
-          content: item.content,
-          author: item.profiles?.full_name || 'Anonymous',
-          created_at: item.created_at,
-        }));
-        setComments(formattedComments.reverse());
+        if (data) {
+          const formattedComments: Comment[] = data.map((item: any) => ({
+            id: item.id,
+            content: item.content,
+            author: item.profiles?.full_name || 'Anonymous',
+            created_at: item.created_at,
+          }));
+          setComments(formattedComments.reverse());
+        }
+      } catch (error) {
+        console.error('Failed to load scrolling comments:', error);
+        setComments([]);
       }
 
       // Set up real-time subscription
@@ -74,21 +80,26 @@ export function ScrollingComments({
             filter: trackId ? `track_id=eq.${trackId}` : `room_id=eq.${roomId}`,
           },
           async (payload) => {
-            // Fetch the author name
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', payload.new.user_id)
-              .single();
+            try {
+              // Fetch the author name
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', payload.new.user_id)
+                .single();
+              if (error) throw error;
 
-            const newComment: Comment = {
-              id: payload.new.id,
-              content: payload.new.content,
-              author: profileData?.full_name || 'Anonymous',
-              created_at: payload.new.created_at,
-            };
+              const newComment: Comment = {
+                id: payload.new.id,
+                content: payload.new.content,
+                author: profileData?.full_name || 'Anonymous',
+                created_at: payload.new.created_at,
+              };
 
-            setComments((prev) => [...prev, newComment]);
+              setComments((prev) => [...prev, newComment]);
+            } catch (error) {
+              console.error('Failed to hydrate scrolling comment:', error);
+            }
           }
         )
         .subscribe();

@@ -37,6 +37,7 @@ export function EmbeddedPlayerDrawer() {
     toggleMute,
     seekToMs,
     stop,
+    closePlayer,
     collapseToMini,
     restoreFromMini,
     setMiniPosition,
@@ -46,9 +47,10 @@ export function EmbeddedPlayerDrawer() {
 
   const resolvedTitle = trackTitle ?? lastKnownTitle ?? '';
   const resolvedArtist = trackArtist ?? lastKnownArtist ?? '';
-  const positionSec = Math.max(0, positionMs / 1000);
-  const durationSec = Math.max(positionSec, durationMs > 0 ? durationMs / 1000 : 0);
-  const volumePercent = Math.round((isMuted ? 0 : volume) * 100);
+  const safeMs = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0);
+  const positionSec = safeMs(positionMs) / 1000;
+  const durationSec = Math.max(positionSec, safeMs(durationMs) / 1000);
+  const volumePercent = Math.round((isMuted ? 0 : Number.isFinite(volume) ? volume : 0) * 100);
 
   const meta = useMemo(() => {
     const fallback = { label: 'Now Playing', badge: '♪', color: 'bg-neutral-900/90' };
@@ -183,6 +185,15 @@ export function EmbeddedPlayerDrawer() {
                 title="Stop playback"
               >
                 <Square className="h-3 w-3 md:h-4 md:w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={closePlayer}
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-border/70 bg-muted/60 text-muted-foreground transition hover:border-border hover:bg-background hover:text-foreground"
+                aria-label="Close player"
+                title="Close player"
+              >
+                <X className="h-3 w-3 md:h-4 md:w-4" />
               </button>
             </div>
           </div>

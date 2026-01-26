@@ -111,8 +111,7 @@ export function YouTubeVideoPlayer({
       const playerId = `yt-player-${videoId}-${Date.now()}`;
       const playerDiv = document.createElement('div');
       playerDiv.id = playerId;
-      containerRef.current.innerHTML = '';
-      containerRef.current.appendChild(playerDiv);
+      containerRef.current.replaceChildren(playerDiv);
 
       playerRef.current = new window.YT.Player(playerId, {
         videoId,
@@ -123,6 +122,7 @@ export function YouTubeVideoPlayer({
           rel: 0,
           fs: 1,
           playsinline: 1,
+          enablejsapi: 1,
           origin: window.location.origin,
         },
         events: {
