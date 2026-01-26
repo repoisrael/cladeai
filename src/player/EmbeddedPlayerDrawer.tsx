@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { usePlayer } from './PlayerContext';
 import { YouTubePlayer } from './providers/YouTubePlayer';
@@ -22,6 +22,10 @@ export function EmbeddedPlayerDrawer() {
     lastKnownTitle,
     lastKnownArtist,
     lastKnownAlbum,
+    positionMs,
+    durationMs,
+    volume,
+    isMuted,
     isOpen,
     isMinimized,
     isMini,
@@ -34,22 +38,23 @@ export function EmbeddedPlayerDrawer() {
     enterCinema,
     exitCinema,
     isPlaying,
-    setIsPlaying,
+    togglePlayPause,
+    setVolumeLevel,
+    toggleMute,
+    seekToMs,
     nextTrack,
     previousTrack,
     closePlayer,
   } = usePlayer();
-
-  const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(70);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(180);
   const cinemaRef = useRef<HTMLDivElement | null>(null);
   const autoplay = isPlaying;
 
   const resolvedTitle = trackTitle ?? lastKnownTitle ?? '';
   const resolvedArtist = trackArtist ?? lastKnownArtist ?? '';
   const resolvedAlbum = trackAlbum ?? lastKnownAlbum ?? '';
+  const positionSec = Math.max(0, positionMs / 1000);
+  const durationSec = Math.max(positionSec, durationMs > 0 ? durationMs / 1000 : 0);
+  const volumePercent = Math.round((isMuted ? 0 : volume) * 100);
 
   const meta = useMemo(() => {
     const fallback = { label: 'Now Playing', badge: '♪', color: 'bg-neutral-900/90' };
@@ -63,31 +68,6 @@ export function EmbeddedPlayerDrawer() {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = parseFloat(e.target.value);
-    setCurrentTime(newTime);
-    // TODO: Implement actual seeking in player providers
-  };
-
-  // Basic ticking to keep seeker in sync when playing
-  useEffect(() => {
-    if (!isPlaying || isIdle) return;
-    const id = window.setInterval(() => {
-      setCurrentTime((t) => (t + 1 > duration ? duration : t + 1));
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [isPlaying, isIdle, duration]);
-
-  // Reset progress when track/provider changes
-  useEffect(() => {
-    setCurrentTime(0);
-    setDuration((prev) => (prev > 0 ? prev : 180));
-  }, [trackId, provider]);
-
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
   };
 
   const toggleFullscreen = () => {
@@ -210,59 +190,43 @@ export function EmbeddedPlayerDrawer() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 px-3 pb-2 md:px-4 md:pb-3">
-            <div className="flex flex-col flex-1 min-w-0 text-white/90" aria-live="polite">
-              {resolvedTitle && <span className="text-sm md:text-base font-semibold truncate">{resolvedTitle}</span>}
-              {resolvedArtist && <span className="text-xs md:text-sm text-white/80 truncate">{resolvedArtist}</span>}
-              {resolvedAlbum && <span className="text-[11px] md:text-xs text-white/70 truncate">{resolvedAlbum}</span>}
-            </div>
-            <div className="flex items-center gap-2 text-white">
-              <span className="text-[11px] md:text-xs tabular-nums" aria-label="Elapsed time">{formatTime(currentTime)}</span>
-              <input
-                type="range"
-                min="0"
-                max={duration}
-                value={Math.min(currentTime, duration)}
-                onChange={handleSeek}
-                disabled={isIdle}
-                className="w-32 md:w-48 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
-                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 
-                         [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full 
-                         [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer"
-                aria-label="Seek"
-              />
-              <span className="text-[11px] md:text-xs tabular-nums" aria-label="Total duration">{formatTime(duration)}</span>
-            </div>
-          </div>
+          <div className="flex flex-wrap items-center gap-3 px-3 pb-3 md:px-4 md:pb-4 text-white">
+            <span className="text-[11px] md:text-xs tabular-nums" aria-label="Elapsed time">{formatTime(positionSec)}</span>
+            <input
+              type="range"
+              min="0"
+              max={Math.max(durationSec, 1)}
+              value={Math.min(positionSec, durationSec)}
+              onChange={(e) => seekToMs(Number(e.target.value) * 1000)}
+              disabled={isIdle}
+              className="flex-1 min-w-[120px] h-1 bg-white/20 rounded-full appearance-none cursor-pointer
+                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 
+                       [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full 
+                       [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer"
+              aria-label="Seek"
+            />
+            <span className="text-[11px] md:text-xs tabular-nums" aria-label="Total duration">{formatTime(durationSec)}</span>
 
-          <div className="flex items-center gap-1 px-3 pb-3 md:px-4 md:pb-4">
-            {/* Volume control */}
             <button
-              onClick={() => setIsMuted(!isMuted)}
+              onClick={toggleMute}
               className="p-2 text-white/80 hover:text-white transition-colors rounded"
               aria-label={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
-            {!isMinimized && (
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={isMuted ? 0 : volume}
-                onChange={(e) => {
-                  setVolume(parseInt(e.target.value));
-                  if (isMuted) setIsMuted(false);
-                }}
-                className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
-                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 
-                         [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full 
-                         [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer"
-                aria-label="Volume"
-              />
-            )}
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={volumePercent}
+              onChange={(e) => setVolumeLevel(Number(e.target.value) / 100)}
+              className="w-24 md:w-32 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
+                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 
+                       [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full 
+                       [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer"
+              aria-label="Volume"
+            />
 
-            {/* Fullscreen toggle */}
             <button
               onClick={toggleFullscreen}
               className="p-2 text-white/80 hover:text-white transition-colors rounded"
