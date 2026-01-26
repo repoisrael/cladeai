@@ -23,26 +23,34 @@ export function FloatingPlayer({ type, trackId, title, artist, onClose, seekTime
     ? `https://open.spotify.com/embed/track/${currentTrackId}?utm_source=generator&theme=0&autoplay=1`
     : `https://www.youtube.com/embed/${currentTrackId}?autoplay=1&mute=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
 
-  // Update iframe src when trackId changes without remounting
+  // Remount iframe when the track changes (improves Spotify autoplay reliability)
   useEffect(() => {
-    if (trackId !== currentTrackId && iframeRef.current) {
+    if (trackId !== currentTrackId) {
+      playerReadyRef.current = false;
       setCurrentTrackId(trackId);
     }
   }, [trackId, currentTrackId]);
   
   // Handle seek time for YouTube
   useEffect(() => {
-    if (type === 'youtube' && seekTime !== null && seekTime !== undefined && iframeRef.current) {
-      // Post message to YouTube iframe to seek
-      iframeRef.current.contentWindow?.postMessage(
-        JSON.stringify({
-          event: 'command',
-          func: 'seekTo',
-          args: [seekTime, true]
-        }),
-        '*'
-      );
+    if (
+      type !== 'youtube' ||
+      seekTime === null ||
+      seekTime === undefined ||
+      !playerReadyRef.current ||
+      !iframeRef.current
+    ) {
+      return;
     }
+
+    iframeRef.current.contentWindow?.postMessage(
+      JSON.stringify({
+        event: 'command',
+        func: 'seekTo',
+        args: [seekTime, true]
+      }),
+      '*'
+    );
   }, [seekTime, type]);
 
   return (
