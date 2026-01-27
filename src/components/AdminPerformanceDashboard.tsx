@@ -66,6 +66,15 @@ export default function AdminPerformanceDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const safeTrends = trends.filter(
+    (t) => Number.isFinite(t.avg_duration) && Number.isFinite(t.max_duration)
+  );
+  const hasTrends = safeTrends.length > 0;
+
+  const safeHistory = featureHistory.filter(
+    (h) => Number.isFinite(h.duration_ms) && Number.isFinite(h.threshold_ms)
+  );
+
   useEffect(() => {
     loadPerformanceData();
   }, []);
@@ -270,24 +279,30 @@ export default function AdminPerformanceDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={trends.slice(0, 15)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="test_name"
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    interval={0}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis label={{ value: 'Duration (ms)', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="avg_duration" fill="#8884d8" name="Avg Duration" />
-                  <Bar dataKey="max_duration" fill="#82ca9d" name="Max Duration" />
-                </BarChart>
-              </ResponsiveContainer>
+              {hasTrends ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={safeTrends.slice(0, 15)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="test_name"
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      interval={0}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis label={{ value: 'Duration (ms)', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="avg_duration" fill="#8884d8" name="Avg Duration" />
+                    <Bar dataKey="max_duration" fill="#82ca9d" name="Max Duration" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  No trend data available
+                </div>
+              )}
 
               {/* Detailed Table */}
               <div className="mt-6 overflow-x-auto">
@@ -303,7 +318,7 @@ export default function AdminPerformanceDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {trends.map((trend, index) => (
+                    {safeTrends.map((trend, index) => (
                       <tr key={index} className="border-b hover:bg-accent">
                         <td className="p-2">{trend.test_name}</td>
                         <td className="text-right p-2">{trend.avg_duration}ms</td>
@@ -336,10 +351,10 @@ export default function AdminPerformanceDashboard() {
               </p>
             </CardHeader>
             <CardContent>
-              {featureHistory.length > 0 ? (
+              {safeHistory.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={featureHistory}>
+                    <LineChart data={safeHistory}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis
                         dataKey="tested_at"
@@ -371,15 +386,15 @@ export default function AdminPerformanceDashboard() {
                   <div className="mt-4 grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-2xl font-bold">
-                        {Math.min(...featureHistory.map((h) => h.duration_ms))}ms
+                        {Math.min(...safeHistory.map((h) => h.duration_ms))}ms
                       </p>
                       <p className="text-sm text-muted-foreground">Best Time</p>
                     </div>
                     <div>
                       <p className="text-2xl font-bold">
                         {Math.round(
-                          featureHistory.reduce((sum, h) => sum + h.duration_ms, 0) /
-                            featureHistory.length
+                          safeHistory.reduce((sum, h) => sum + h.duration_ms, 0) /
+                            safeHistory.length
                         )}
                         ms
                       </p>
@@ -387,7 +402,7 @@ export default function AdminPerformanceDashboard() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">
-                        {Math.max(...featureHistory.map((h) => h.duration_ms))}ms
+                        {Math.max(...safeHistory.map((h) => h.duration_ms))}ms
                       </p>
                       <p className="text-sm text-muted-foreground">Worst Time</p>
                     </div>
