@@ -36,6 +36,9 @@ interface LiveChatProps {
   className?: string;
 }
 
+// If the backend environment doesn't provision chat_messages/chat_rooms, avoid repeated 404 spam
+let chatSchemaMissing = false;
+
 export function LiveChat({ 
   roomId = 'global', 
   roomType = 'global',
@@ -53,6 +56,10 @@ export function LiveChat({
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (chatDisabled) {
+    return null;
+  }
+
+  if (chatSchemaMissing) {
     return null;
   }
 
@@ -125,7 +132,16 @@ export function LiveChat({
         .order('created_at', { ascending: true })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        if ((error as any)?.code === 'PGRST205' || (error as any)?.message?.includes("Could not find the table 'public.chat_messages'")) {
+          console.warn('[LiveChat] chat_messages table missing; disabling chat UI');
+          chatSchemaMissing = true;
+          setMessages([]);
+          setIsLoading(false);
+          return;
+        }
+        throw error;
+      }
       setMessages(data || []);
       scrollToBottom();
     } catch (error) {
