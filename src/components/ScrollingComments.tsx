@@ -20,6 +20,8 @@ interface ScrollingCommentsProps {
  * TikTok-style scrolling comments that appear from bottom and fade out
  * Shows real-time comments overlaid on the content
  */
+let chatSchemaMissing = false;
+
 export function ScrollingComments({
   trackId,
   roomId = 'global',
@@ -34,6 +36,12 @@ export function ScrollingComments({
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupSubscription = async () => {
+      if (!trackId && chatSchemaMissing) {
+        // Avoid repeated 404s when chat_messages table is absent in the environment
+        setComments([]);
+        return;
+      }
+
       let disableRealtime = false;
       try {
         // Fetch recent comments
@@ -56,6 +64,9 @@ export function ScrollingComments({
           console.warn('[ScrollingComments] skipping due to schema error', error);
           setComments([]);
           disableRealtime = true;
+          if (!trackId) {
+            chatSchemaMissing = true;
+          }
         }
 
         if (data) {
