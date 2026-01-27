@@ -79,6 +79,36 @@ export default function AdminPerformanceDashboard() {
     loadPerformanceData();
   }, []);
 
+  const toNumber = (value: unknown): number => {
+    const n = typeof value === 'string' ? Number(value) : value;
+    return Number.isFinite(n as number) ? (n as number) : 0;
+  };
+
+  const sanitizeTrends = (rows: PerformanceTrend[] | null | undefined): PerformanceTrend[] => {
+    if (!rows) return [];
+    return rows
+      .map((row) => ({
+        ...row,
+        avg_duration: toNumber(row.avg_duration),
+        min_duration: toNumber(row.min_duration),
+        max_duration: toNumber(row.max_duration),
+        test_count: toNumber(row.test_count),
+        pass_rate: toNumber(row.pass_rate),
+      }))
+      .filter((row) => Number.isFinite(row.avg_duration) && Number.isFinite(row.max_duration));
+  };
+
+  const sanitizeHistory = (rows: TestHistory[] | null | undefined): TestHistory[] => {
+    if (!rows) return [];
+    return rows
+      .map((row) => ({
+        ...row,
+        duration_ms: toNumber(row.duration_ms),
+        threshold_ms: toNumber(row.threshold_ms),
+      }))
+      .filter((row) => Number.isFinite(row.duration_ms));
+  };
+
   const loadPerformanceData = async () => {
     setLoading(true);
 
@@ -95,7 +125,7 @@ export default function AdminPerformanceDashboard() {
 
       // Get trends
       const { data: trendsData } = await supabase.rpc('get_performance_trends', { p_days: 30 });
-      setTrends(trendsData || []);
+      setTrends(sanitizeTrends(trendsData));
     } catch (error) {
       console.error('Error loading performance data:', error);
     } finally {
@@ -108,7 +138,7 @@ export default function AdminPerformanceDashboard() {
       p_test_name: featureName,
       p_days: 7,
     });
-    setFeatureHistory(data || []);
+    setFeatureHistory(sanitizeHistory(data));
     setSelectedFeature(featureName);
   };
 
