@@ -34,6 +34,7 @@ export function ScrollingComments({
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupSubscription = async () => {
+      let disableRealtime = false;
       try {
         // Fetch recent comments
         const query = trackId
@@ -54,7 +55,7 @@ export function ScrollingComments({
         if (error) {
           console.warn('[ScrollingComments] skipping due to schema error', error);
           setComments([]);
-          return;
+          disableRealtime = true;
         }
 
         if (data) {
@@ -69,7 +70,10 @@ export function ScrollingComments({
       } catch (error) {
         console.error('Failed to load scrolling comments:', error);
         setComments([]);
+        disableRealtime = true;
       }
+
+      if (disableRealtime) return;
 
       // Set up real-time subscription
       const table = trackId ? 'track_comments' : 'chat_messages';
