@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BottomNav } from '@/components/BottomNav';
 import { ChordBadge } from '@/components/ChordBadge';
@@ -83,7 +83,7 @@ export default function SearchPage() {
     return () => clearTimeout(timer);
   }, [query, searchMode, user, isSpotifyConnected]);
 
-  const loadMoreSpotify = useCallback(async () => {
+  const loadMoreSpotify = React.useCallback(async () => {
     if (!user) return;
     setIsSearching(true);
     try {
