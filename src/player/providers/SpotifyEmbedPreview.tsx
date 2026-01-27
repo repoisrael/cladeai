@@ -136,6 +136,7 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
   const lastPositionRef = useRef<number>(0);
   const [ready, setReady] = useState(false);
   const [useEmbedFallback, setUseEmbedFallback] = useState(false);
+  const lastTrackIdRef = useRef<string | null>(null);
 
   // Sync volume ref
   useEffect(() => {
@@ -226,12 +227,21 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
                 : [];
               const artistNames = artistsArr.map((a) => a?.name).filter(Boolean).join(', ') || null;
 
-              const pos = typeof state.position === 'number' ? state.position : 0;
-              const lastPos = lastPositionRef.current;
-              const isGlitchyBackward = pos < lastPos - 1500 && !state.paused;
-              if (!isGlitchyBackward) {
-                lastPositionRef.current = pos;
+              const rawPos = typeof state.position === 'number' ? state.position : 0;
+              const trackId = state.track_window?.current_track?.id ?? null;
+
+              // Reset position tracking when the track changes
+              if (trackId && trackId !== lastTrackIdRef.current) {
+                lastTrackIdRef.current = trackId;
+                lastPositionRef.current = rawPos;
               }
+
+              // Enforce monotonic forward motion during playback to avoid jitter
+              let pos = rawPos;
+              if (!state.paused) {
+                pos = Math.max(rawPos, lastPositionRef.current);
+              }
+              lastPositionRef.current = pos;
 
               console.log('[Spotify] state:', {
                 paused: state.paused,
@@ -240,13 +250,13 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
                 track: state.track_window?.current_track?.name,
                 volume: state.device?.volume_percent ?? state.volume,
               });
-              if (state.duration) {
+              if (typeof state.duration === 'number' && Number.isFinite(state.duration)) {
                 setDuration(state.duration);
               }
               try {
                 updatePlaybackState({
                   positionMs: isGlitchyBackward ? lastPos : pos,
-                  durationMs: state.duration,
+                  durationMs: Number.isFinite(state.duration) ? state.duration : undefined,
                   isPlaying: !state.paused,
                   volume: typeof state.volume === 'number' ? state.volume : volumeRef.current,
                   isMuted: state.volume === 0,
