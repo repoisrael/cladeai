@@ -10,7 +10,7 @@ interface YouTubePlayerProps {
  * Iframe-only YouTube embed for fastest load and no SDK contention.
  */
 export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps) {
-  const { provider, isMuted, registerProviderControls, updatePlaybackState, clearSeek } = usePlayer();
+  const { provider, isMuted, registerProviderControls, updatePlaybackState, clearSeek, setDuration } = usePlayer();
 
   const src = useMemo(() => {
     if (!providerTrackId) return '';
@@ -35,8 +35,9 @@ export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps)
       setMute: async () => {},
       teardown: async () => {},
     });
-    // Mark playback as starting immediately to avoid UI lag
+    // Mark playback as starting immediately to avoid UI lag; simulate duration if unknown
     updatePlaybackState({ isPlaying: !!autoplay, positionMs: 0 });
+    setDuration(0);
     clearSeek();
   }, [provider, registerProviderControls, updatePlaybackState, clearSeek, autoplay]);
 

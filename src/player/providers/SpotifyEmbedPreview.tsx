@@ -45,6 +45,8 @@ const resetSpotifyState = () => {
 };
 
 const MIN_AUDIBLE_VOLUME = 0.05; // avoid accidental zeros when unmuted
+const lastTrackStarted: { id: string | null } = { id: null };
+const inFlightPlay: { running: boolean } = { running: false };
 
 const loadSdk = () => {
   if (sdkReady) return Promise.resolve();
@@ -208,8 +210,9 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
             }
             void logActiveDevice(token);
             const shouldPlay = autoplay ?? autoplaySpotify ?? true;
-            const transferred = await transferPlayback(device_id, token, shouldPlay);
-            if (providerTrackId) {
+            if (providerTrackId && lastTrackStarted.id !== providerTrackId) {
+              lastTrackStarted.id = providerTrackId;
+              const transferred = await transferPlayback(device_id, token, shouldPlay);
               await startPlayback(device_id, token, providerTrackId, seekToSec ?? 0, transferred);
             }
           });
@@ -236,6 +239,9 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
               trackArtist: state.track_window?.current_track?.artists?.map((a) => a.name).join(', ') ?? null,
               trackAlbum: state.track_window?.current_track?.album?.name ?? null,
             });
+            if (state.track_window?.current_track?.id) {
+              lastTrackStarted.id = state.track_window.current_track.id;
+            }
           });
 
           player.addListener('not_ready', ({ device_id }) => {
@@ -255,9 +261,20 @@ export function SpotifyEmbedPreview({ providerTrackId, autoplay }: SpotifyEmbedP
             const tokenVal = tokenRef.current;
             const device = deviceIdRef.current;
             if (!tokenVal || !device) return;
-            const transferred = await transferPlayback(device, tokenVal, true);
-            if (providerTrackId) {
-              await startPlayback(device, tokenVal, providerTrackId, startSec ?? 0, transferred);
+            if (providerTrackId && lastTrackStarted.id === providerTrackId && ready) {
+              await player.resume?.();
+              return;
+            }
+            if (inFlightPlay.running) return;
+            inFlightPlay.running = true;
+            try {
+              const transferred = await transferPlayback(device, tokenVal, true);
+              if (providerTrackId) {
+                lastTrackStarted.id = providerTrackId;
+                await startPlayback(device, tokenVal, providerTrackId, startSec ?? 0, transferred);
+              }
+            } finally {
+              inFlightPlay.running = false;
             }
           },
           pause: async () => {

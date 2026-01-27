@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { usePlayer } from './PlayerContext';
 import { YouTubePlayer } from './providers/YouTubePlayer';
 import { SpotifyEmbedPreview } from './providers/SpotifyEmbedPreview';
@@ -180,7 +180,7 @@ export function EmbeddedPlayerDrawer({ onNext, onPrev, canNext, canPrev }: Embed
           exit={{ y: -20, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           data-player="universal"
-          className="pointer-events-auto fixed bottom-4 left-0 -translate-x-0 z-[9999] w-full rounded-none md:left-1/2 md:-translate-x-1/2 md:w-[min(720px,calc(100vw-32px))]"
+          className="pointer-events-auto fixed bottom-4 left-0 -translate-x-0 z-[9999] w-full rounded-none md:top-3 md:left-1/2 md:-translate-x-1/2 md:w-[min(720px,calc(100vw-32px))] md:bottom-auto"
         >
           <div className={`overflow-hidden rounded-none md:rounded-2xl border border-border/50 bg-gradient-to-br ${meta.color} shadow-2xl backdrop-blur-xl`}>
           {/* Header - Always visible, compact on mobile */}
@@ -276,26 +276,21 @@ export function EmbeddedPlayerDrawer({ onNext, onPrev, canNext, canPrev }: Embed
           </div>
 
           {/* Video area slides from top of player */}
-          <AnimatePresence initial={false}>
-            {showVideo && provider && trackId && (
-              <motion.div
-                key="video-pane"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="overflow-hidden bg-black/80"
-              >
-                <div className="relative">
-                  {provider === 'spotify' ? (
-                    <SpotifyEmbedPreview providerTrackId={trackId} autoplay={autoplay} />
-                  ) : (
-                    <YouTubePlayer providerTrackId={trackId} autoplay={autoplay} />
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <motion.div
+            initial={false}
+            animate={{ height: showVideo && provider && trackId ? 'auto' : 0, opacity: showVideo && provider && trackId ? 1 : 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="overflow-hidden bg-black/80"
+            aria-hidden={!showVideo || !provider || !trackId}
+          >
+            <div className="relative">
+              {provider === 'spotify' ? (
+                <SpotifyEmbedPreview providerTrackId={trackId} autoplay={autoplay} />
+              ) : (
+                <YouTubePlayer providerTrackId={trackId} autoplay={autoplay} />
+              )}
+            </div>
+          </motion.div>
 
           {/* Compact Controls Row: Seekbar + Volume inline */}
           <div className="flex items-center gap-2 px-3 pb-3 md:px-4 md:pb-4 text-white">
