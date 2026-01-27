@@ -310,7 +310,7 @@ export function EmbeddedPlayerDrawer({ onNext, onPrev, canNext, canPrev }: Embed
 
           {/* Compact Controls Row: Seekbar + Volume inline */}
           <div className="flex items-center gap-2 px-3 pb-3 md:px-4 md:pb-4 text-white">
-            <span className="text-[10px] md:text-xs tabular-nums" aria-label="Elapsed time">{formatTime(positionSec)}</span>
+            <span className="text-[10px] md:text-xs tabular-nums w-12 text-right" aria-label="Elapsed time">{formatTime(positionSec)}</span>
             <input
               type="range"
               min="0"
@@ -324,7 +324,7 @@ export function EmbeddedPlayerDrawer({ onNext, onPrev, canNext, canPrev }: Embed
                        [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer"
               aria-label="Seek"
             />
-            <span className="text-[10px] md:text-xs tabular-nums" aria-label="Total duration">{formatTime(durationSec)}</span>
+            <span className="text-[10px] md:text-xs tabular-nums w-12 text-left" aria-label="Total duration">{formatTime(durationSec)}</span>
 
             <button
               onClick={toggleMute}
