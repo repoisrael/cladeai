@@ -44,6 +44,9 @@ export function PageLayout({
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 pointer-events-none select-none">
+        <CladeLogoAnimated size={44} className="drop-shadow-lg" />
+      </div>
       {/* Header */}
       <header className={`z-40 glass-strong safe-top ${headerPositionClass}`}>
         <div className={`px-4 py-4 ${containerWidth}`}>
