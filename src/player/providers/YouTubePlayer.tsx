@@ -43,7 +43,7 @@ export function YouTubePlayer({ providerTrackId, autoplay }: YouTubePlayerProps)
   if (provider !== 'youtube' || !providerTrackId) return null;
 
   return (
-    <div className="w-full h-14 md:h-24 bg-black rounded-xl overflow-hidden">
+    <div className="w-full bg-black rounded-xl overflow-hidden aspect-video">
       <iframe
         title="YouTube player"
         src={src}
