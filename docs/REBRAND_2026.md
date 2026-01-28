@@ -51,9 +51,9 @@
 - OG Images: `/cladeai/main/public/og-image.png`
 
 **New**:
-- Homepage: `https://repoisrael.github.io/clade/`
-- GitHub: `https://github.com/repoisrael/clade`
-- OG Images: `/clade/main/public/og-image.png`
+- Homepage: `https://kaospan.github.io/clademusic/`
+- GitHub: `https://github.com/kaospan/clademusic`
+- OG Images: `/clademusic/main/public/og-image.png`
 
 ## Migration Notes
 
@@ -75,7 +75,7 @@ git remote set-url origin https://github.com/repoisrael/clade.git
 Update redirect URI in Spotify Dashboard:
 ```
 Old: https://repoisrael.github.io/cladeai/spotify-callback
-New: https://repoisrael.github.io/clade/spotify-callback
+New: https://kaospan.github.io/clademusic/spotify-callback
 ```
 
 ## Brand Assets (TODO)

@@ -1,16 +1,21 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "homepage": "https://repoisrael.github.io/cladeai/",
+  "homepage": "https://kaospan.github.io/clademusic/",
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=0.0.0"
+  },
   "scripts": {
+    "preinstall": "node ./scripts/abort-if-not-bun.cjs",
     "dev": "vite",
     "build": "vite build",
     "predeploy": "bun run build && echo . > dist/.nojekyll",
-    "deploy": "gh-pages -d dist -t",
+    "deploy": "bun run build && gh-pages -d dist",
     "build:dev": "vite build --mode development",
-    "dev:e2e": "vite --host 127.0.0.1 --port 8090 --base /cladeai/",
+    "dev:e2e": "vite --host 127.0.0.1 --port 8090 --base /clademusic/",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
@@ -20,8 +25,8 @@
     "cypress:run": "cypress run",
     "test:e2e": "cypress run",
     "test:e2e:smoke": "cypress run --config-file cypress.config.mjs --spec 'cypress/e2e/smoke.cy.ts'",
-    "test:e2e:smoke:auto": "start-server-and-test \"npm run dev:e2e\" http://127.0.0.1:8090/ \"cypress run --config-file cypress.config.mjs --config baseUrl=http://127.0.0.1:8090/cladeai --spec 'cypress/e2e/smoke.cy.ts'\"",
-    "test:e2e:smoke:prod": "cypress run --config-file cypress.config.mjs --config baseUrl=https://repoisrael.github.io/cladeai --spec 'cypress/e2e/smoke.cy.ts'",
+    "test:e2e:smoke:auto": "start-server-and-test \"npm run dev:e2e\" http://127.0.0.1:8090/ \"cypress run --config-file cypress.config.mjs --config baseUrl=http://127.0.0.1:8090/clademusic --spec 'cypress/e2e/smoke.cy.ts'\"",
+    "test:e2e:smoke:prod": "cypress run --config-file cypress.config.mjs --config baseUrl=https://kaospan.github.io/clademusic --spec 'cypress/e2e/smoke.cy.ts'",
     "test:e2e:sanity": "cypress run --spec 'cypress/e2e/sanity/**/*.cy.ts'",
     "seed": "node scripts/seed.js",
     "seed:reset": "node scripts/seed.js --reset"
